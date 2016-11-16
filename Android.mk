@@ -14,6 +14,7 @@ optee: $(OPTEE_OUT)
 	@echo "Building optee"
 	$(hide) ARCH=arm make  -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT) clean
 	$(hide) ARCH=arm make  -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT) all
-	$(hide) cp $(OPTEE_OUT)/core/*.srec $(ANDROID_BUILD_TOP)/$(PRODUCT_OUT)/
+	$(hide) cp $(OPTEE_OUT)/core/*.srec $(ANDROID_PRODUCT_OUT)/
+	$(hide) cp $(OPTEE_OUT)/core/*.bin $(ANDROID_PRODUCT_OUT)/
 
 .PHONY: optee
