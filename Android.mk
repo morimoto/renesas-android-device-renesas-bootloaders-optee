@@ -1,4 +1,4 @@
-OPTEE_SRC=$(ANDROID_BUILD_TOP)/device/renesas/salvator/bootloaders/optee/
+OPTEE_SRC=$(ANDROID_BUILD_TOP)/device/renesas/bootloaders/optee/
 export OPTEE_OUT=$(ANDROID_BUILD_TOP)/$(TARGET_OUT_INTERMEDIATES)/OPTEE_OBJ
 export CROSS_COMPILE64=$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu-5.1/bin/aarch64-linux-gnu-
 
