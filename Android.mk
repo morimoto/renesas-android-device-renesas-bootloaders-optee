@@ -17,4 +17,34 @@ optee: $(OPTEE_OUT)
 	$(hide) cp $(OPTEE_OUT)/core/*.srec $(ANDROID_PRODUCT_OUT)/
 	$(hide) cp $(OPTEE_OUT)/core/*.bin $(ANDROID_PRODUCT_OUT)/
 
+android_optee: $(OPTEE_OUT)
+	@echo "Building optee"
+	$(hide) ARCH=arm make  -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT) clean
+	$(hide) ARCH=arm make  -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT) all
+
 .PHONY: optee
+
+
+LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
+
+TEE_BIN_PATH := $(OPTEE_OUT)/core/tee.bin
+$(TEE_BIN_PATH): android_optee
+
+LOCAL_MODULE := tee.bin
+LOCAL_PREBUILT_MODULE_FILE:= $(TEE_BIN_PATH)
+LOCAL_MODULE_PATH := $(ANDROID_BUILD_TOP)/$(PRODUCT_OUT)
+
+include $(BUILD_EXECUTABLE)
+
+
+include $(CLEAR_VARS)
+
+TEE_SREC_PATH := $(OPTEE_OUT)/core/tee.srec
+$(TEE_SREC_PATH): android_optee
+
+LOCAL_MODULE := tee.srec
+LOCAL_PREBUILT_MODULE_FILE:= $(TEE_SREC_PATH)
+LOCAL_MODULE_PATH := $(ANDROID_BUILD_TOP)/$(PRODUCT_OUT)
+
+include $(BUILD_EXECUTABLE)
