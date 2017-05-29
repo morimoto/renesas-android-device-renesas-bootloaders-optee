@@ -31,6 +31,7 @@
 #include <tomcrypt.h>
 #include <trace.h>
 #include <tee/tee_cryp_provider.h>
+#include "mpa.h"
 
 #define TA_NAME		"asn1_parser.ta"
 

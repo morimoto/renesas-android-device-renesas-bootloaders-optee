@@ -3,6 +3,7 @@ srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += core_self_tests.c
 srcs-$(CFG_WITH_STATS) += stats.c
 srcs-y += hyper_ta.c
 srcs-y += asn1_parser.c
+srcs-y += rng_entropy.c
 cppflags-hyper.c-y += -Ilib/libzlib/include
 subdirs-y +=../../../../lib/libzlib
 
