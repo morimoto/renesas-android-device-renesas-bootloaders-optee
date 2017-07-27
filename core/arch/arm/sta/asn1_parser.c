@@ -55,6 +55,7 @@
 #define CMD_PARSE 0
 #define CMD_X509_ENCODE 1
 #define CMD_EC_SIGN_ENCODE 2
+#define CMD_EC_SIGN_DECODE 3
 
 #define MAX_HEADER_SIZE 4
 #define CODE_SEQUENCE 0x30
@@ -807,6 +808,81 @@ out:
 	return res;
 }
 
+
+/*
+ * INPUT
+ * params[0].memref.buffer - EC sign in ASN.1 format
+ * params[0].memref.size - EC sign length
+ * params[1].value.a - key size in bits
+ *
+ * OUTPUT
+ * params[2].memref.buffer - decoded sign data
+ * params[2].memref.size - decoded sign data length
+ */
+static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
+				 TEE_Param params[TEE_NUM_PARAMS])
+{
+	uint32_t exp_param_types = TEE_PARAM_TYPES(
+					TEE_PARAM_TYPE_MEMREF_INPUT,
+					TEE_PARAM_TYPE_VALUE_INPUT,
+					TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					TEE_PARAM_TYPE_NONE);
+	uint32_t res = CRYPT_OK;
+	uint8_t *input = params[0].memref.buffer;
+	uint32_t input_l = params[0].memref.size;
+	uint8_t *output = params[2].memref.buffer;
+	uint32_t output_l = 0;
+	uint32_t key_size = (params[1].value.a + 7) / 8;
+	uint32_t bn_size = 0;
+	struct bignum *s = NULL;
+	struct bignum *r = NULL;
+
+	if (ptypes != exp_param_types) {
+		EMSG("Wrong parameters\n");
+		res = TEE_ERROR_BAD_PARAMETERS;
+		goto out;
+	}
+
+	s = malloc(sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2);
+	if (!s) {
+		EMSG("Failed to allocate memory for EC sign number S");
+		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
+		goto out;
+	}
+	r = malloc(sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2);
+	if (!r) {
+		EMSG("Failed to allocate memory for EC sign number R");
+		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
+		goto out;
+	}
+	s->alloc = sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2;
+	r->alloc = sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2;
+	res = der_decode_sequence_multi(input, input_l,
+				LTC_ASN1_INTEGER, 1UL, r,
+				LTC_ASN1_INTEGER, 1UL, s,
+				LTC_ASN1_EOL, 0UL, NULL);
+	if (res != CRYPT_OK) {
+		EMSG("Failed to decode sequence of EC signature");
+		goto out;
+	}
+	bn_size = crypto_ops.bignum.num_bytes(r);
+	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
+	crypto_ops.bignum.bn2bin(r, output + output_l);
+	output_l += bn_size;
+
+	bn_size = crypto_ops.bignum.num_bytes(s);
+	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
+	crypto_ops.bignum.bn2bin(s, output + output_l);
+	output_l += bn_size;
+out:
+	params[2].memref.size = output_l;
+	if (s)
+		free(s);
+	if (r)
+		free(r);
+	return res;
+}
+
 /*
  * Trusted Application Entry Points
  */
@@ -842,6 +918,8 @@ static TEE_Result invoke_command(void *psess __unused,
 		return TA_x509_encode(ptypes, params);
 	case CMD_EC_SIGN_ENCODE:
 		return TA_ec_sign_encode(ptypes, params);
+	case CMD_EC_SIGN_DECODE:
+		return TA_ec_sign_decode(ptypes, params);
 	default:
 		break;
 	}
