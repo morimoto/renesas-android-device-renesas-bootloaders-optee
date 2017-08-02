@@ -1323,11 +1323,14 @@ TEE_Result crypto_acipher_rsassa_verify(uint32_t algo,
 
 	ltc_res = rsa_verify_hash_ex(sig, sig_len, msg, msg_len, ltc_rsa_algo,
 				     ltc_hashindex, salt_len, &stat, &ltc_key);
-	if ((ltc_res != CRYPT_OK) || (stat != 1)) {
-		res = TEE_ERROR_SIGNATURE_INVALID;
-		goto err;
-	}
-	res = TEE_SUCCESS;
+
+	if (ltc_res == CRYPT_OK)
+		if (stat == 1)
+			res = TEE_SUCCESS;
+		else
+			res = TEE_ERROR_SIGNATURE_INVALID;
+	else
+		res = TEE_ERROR_GENERIC;
 
 err:
 	return res;
@@ -1527,8 +1530,11 @@ TEE_Result crypto_acipher_dsa_verify(uint32_t algo, struct dsa_public_key *key,
 	ltc_res = dsa_verify_hash_raw(r, s, msg, msg_len, &ltc_stat, &ltc_key);
 	mp_clear_multi(r, s, NULL);
 
-	if ((ltc_res == CRYPT_OK) && (ltc_stat == 1))
-		res = TEE_SUCCESS;
+	if (ltc_res == CRYPT_OK)
+		if (ltc_stat == 1)
+			res = TEE_SUCCESS;
+		else
+			res = TEE_ERROR_SIGNATURE_INVALID;
 	else
 		res = TEE_ERROR_GENERIC;
 
@@ -1979,8 +1985,12 @@ TEE_Result crypto_acipher_ecc_verify(uint32_t algo, struct ecc_public_key *key,
 	mp_read_unsigned_bin(s, (uint8_t *)sig + sig_len/2, sig_len/2);
 
 	ltc_res = ecc_verify_hash_raw(r, s, msg, msg_len, &ltc_stat, &ltc_key);
-	if ((ltc_res == CRYPT_OK) && (ltc_stat == 1))
-		res = TEE_SUCCESS;
+
+	if (ltc_res == CRYPT_OK)
+		if (ltc_stat == 1)
+			res = TEE_SUCCESS;
+		else
+			res = TEE_ERROR_SIGNATURE_INVALID;
 	else
 		res = TEE_ERROR_GENERIC;
 
