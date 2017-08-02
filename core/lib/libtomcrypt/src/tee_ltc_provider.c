@@ -1239,6 +1239,9 @@ TEE_Result crypto_acipher_rsassa_sign(uint32_t algo, struct rsa_keypair *key,
 
 	ltc_sig_len = mod_size;
 
+	if (ltc_rsa_algo == LTC_PKCS_1_PSS && salt_len == -1)
+		salt_len = hash_size;
+
 	ltc_res = rsa_sign_hash_ex(msg, msg_len, sig, &ltc_sig_len,
 				   ltc_rsa_algo, &prng->state, prng->index,
 				   ltc_hashindex, salt_len, &ltc_key);
@@ -1320,6 +1323,9 @@ TEE_Result crypto_acipher_rsassa_verify(uint32_t algo,
 		res = TEE_ERROR_BAD_PARAMETERS;
 		goto err;
 	}
+
+	if (ltc_rsa_algo == LTC_PKCS_1_PSS && salt_len == -1)
+		salt_len = hash_size;
 
 	ltc_res = rsa_verify_hash_ex(sig, sig_len, msg, msg_len, ltc_rsa_algo,
 				     ltc_hashindex, salt_len, &stat, &ltc_key);
