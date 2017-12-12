@@ -45,6 +45,12 @@ const int der_asn1_type_to_identifier_map[] =
  20, /* LTC_ASN1_TELETEX_STRING, */
  24, /* LTC_ASN1_GENERALIZEDTIME, */
  -1, /* LTC_ASN1_CUSTOM_TYPE, */
+     /* 20 */
+ -1, /* LTC_ASN1_CONSTRUCTED */
+ -1, /* LTC_ASN1_CONTEXT_SPECIFIC */
+ -1, /* LTC_ASN1_EXP_TAG */
+ -1, /* LTC_ASN1_ENUMERATED */
+ -1, /* LTC_ASN1_LONG_INTEGER */
 };
 const unsigned long der_asn1_type_to_identifier_map_sz = sizeof(der_asn1_type_to_identifier_map)/sizeof(der_asn1_type_to_identifier_map[0]);
 

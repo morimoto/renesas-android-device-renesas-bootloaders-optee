@@ -68,11 +68,16 @@ int der_encode_sequence_multi(unsigned char *out, unsigned long *outlen, ...)
            case LTC_ASN1_SETOF:
            case LTC_ASN1_RAW_BIT_STRING:
            case LTC_ASN1_GENERALIZEDTIME:
+           case LTC_ASN1_EXP_TAG:
+           case LTC_ASN1_ENUMERATED:
+           case LTC_ASN1_LONG_INTEGER:
                 ++x;
                 break;
 
            case LTC_ASN1_CHOICE:
            case LTC_ASN1_CUSTOM_TYPE:
+           case LTC_ASN1_CONSTRUCTED:
+           case LTC_ASN1_CONTEXT_SPECIFIC:
            case LTC_ASN1_EOL:
            case LTC_ASN1_TELETEX_STRING:
            default:
@@ -121,11 +126,16 @@ int der_encode_sequence_multi(unsigned char *out, unsigned long *outlen, ...)
            case LTC_ASN1_SETOF:
            case LTC_ASN1_RAW_BIT_STRING:
            case LTC_ASN1_GENERALIZEDTIME:
+           case LTC_ASN1_EXP_TAG:
+           case LTC_ASN1_ENUMERATED:
+           case LTC_ASN1_LONG_INTEGER:
                 LTC_SET_ASN1(list, x++, type, data, size);
                 break;
 
            case LTC_ASN1_CHOICE:
            case LTC_ASN1_CUSTOM_TYPE:
+           case LTC_ASN1_CONSTRUCTED:
+           case LTC_ASN1_CONTEXT_SPECIFIC:
            case LTC_ASN1_EOL:
            case LTC_ASN1_TELETEX_STRING:
            default:
