@@ -6,8 +6,10 @@ srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += core_mutex_tests.c
 cppflags-hyper_ta.c-y += -Ilib/libzlib/include
 
 srcs-y += rng_entropy.c
-srcs-y += asn1_parser.c
 srcs-y += hyper_ta.c
+srcs-y += asn1_parser.c
+srcs-y += attestations.c
+srcs-y += encoders.c
 
 subdirs-y +=../../../../lib/libzlib
 
