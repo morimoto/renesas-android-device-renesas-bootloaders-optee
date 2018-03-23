@@ -36,7 +36,7 @@ ldargs-all_objs := -T $(link-script-dummy) --no-check-sections \
 cleanfiles += $(link-out-dir)/all_objs.o
 $(link-out-dir)/all_objs.o: $(objs) $(libdeps) $(MAKEFILE_LIST)
 	@$(cmd-echo-silent) '  LD      $@'
-	$(q)$(LDcore) $(ldargs-all_objs) -o $@
+	$(LDcore) $(ldargs-all_objs) -o $@
 
 cleanfiles += $(link-out-dir)/unpaged_entries.txt
 $(link-out-dir)/unpaged_entries.txt: $(link-out-dir)/all_objs.o
