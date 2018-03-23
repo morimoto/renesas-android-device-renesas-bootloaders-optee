@@ -28,7 +28,7 @@
 #include <compiler.h>
 #include <stdio.h>
 #include <trace.h>
-#include <kernel/static_ta.h>
+#include <kernel/pseudo_ta.h>
 #include <mm/tee_pager.h>
 #include <mm/tee_mm.h>
 #include <string.h>
@@ -73,7 +73,7 @@ static const struct img_param img_params[MAX_IMAGES] = {
 
 
 /*This is called separately for reading*/
-static TEE_Result init_hyper_drv(uint32_t type, TEE_Param p[4])
+static TEE_Result init_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 {
 	if (TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
 			    TEE_PARAM_TYPE_NONE,
@@ -98,7 +98,7 @@ static TEE_Result init_hyper_drv(uint32_t type, TEE_Param p[4])
 /*(p[0].value.a - Flash Read Address */
 /*(p[0].value.b - Read Data Size (0..SECTOR_SIZE) */
 
-static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[4])
+static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 {
 	uint32_t ret;
 
@@ -130,7 +130,7 @@ static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[4])
 /*(p[1].value.b - Boot Image Type */
 
 #define IMAGE_VERIFY_ON
-static TEE_Result wite_hyper_drv(uint32_t type, TEE_Param p[4])
+static TEE_Result wite_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 {
 	uint32_t i, ret;
 	uint32_t crc_orig = p[1].value.a, crc = crc32(0L, Z_NULL, 0);
@@ -232,33 +232,10 @@ static TEE_Result wite_hyper_drv(uint32_t type, TEE_Param p[4])
 }
 
 
-/*
- * Trusted Application Entry Points
- */
-
-static TEE_Result create_ta(void)
-{
-	return TEE_SUCCESS;
-}
-
-static void destroy_ta(void)
-{
-}
-
-static TEE_Result open_session(uint32_t ptype __unused,
-			       TEE_Param params[4] __unused,
-			       void **ppsess __unused)
-{
-	return TEE_SUCCESS;
-}
-
-static void close_session(void *psess __unused)
-{
-}
 
 static TEE_Result invoke_command(void *psess __unused,
 				 uint32_t cmd, uint32_t ptypes,
-				 TEE_Param params[4])
+				 TEE_Param params[TEE_NUM_PARAMS])
 {
 	switch (cmd) {
 	case HYPER_CMD_INIT_DRV:
@@ -272,10 +249,7 @@ static TEE_Result invoke_command(void *psess __unused,
 	}
 	return TEE_ERROR_BAD_PARAMETERS;
 }
-
-static_ta_register(.uuid = HYPER_UUID, .name = TA_NAME,
-		   .create_entry_point = create_ta,
-		   .destroy_entry_point = destroy_ta,
-		   .open_session_entry_point = open_session,
-		   .close_session_entry_point = close_session,
+pseudo_ta_register(.uuid = HYPER_UUID, .name = TA_NAME,
+		   .flags = PTA_DEFAULT_FLAGS,
 		   .invoke_command_entry_point = invoke_command);
+
