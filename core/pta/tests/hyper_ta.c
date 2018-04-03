@@ -38,6 +38,8 @@
 #include <tee_api_defines.h>
 #include <drivers/qspi_hyper_flash.h>
 #include <zlib.h>
+#include <tee/tee_fs.h>
+#include <tee/tee_standalone_fs.h>
 
 #define TA_NAME		"hyper.ta"
 
@@ -51,7 +53,7 @@
 #define HYPER_CMD_INIT_DRV		0
 #define HYPER_CMD_READ			1
 #define HYPER_CMD_WRITE			2
-
+#define HYPER_CMD_ERASE			3
 
 struct img_param {
 	const char *img_name;
@@ -59,8 +61,8 @@ struct img_param {
 	uint32_t max_size;
 };
 
-/*We can flash 6 images*/
-#define MAX_IMAGES 6
+/*We can flash 7 images*/
+#define MAX_IMAGES 7
 
 /*Set legal address and maximum size for every image*/
 static const struct img_param img_params[MAX_IMAGES] = {
@@ -69,7 +71,9 @@ static const struct img_param img_params[MAX_IMAGES] = {
 			{"Cert_header", 0x180000, 1*SECTOR_SIZE},
 			{"BL31", 0x1C0000, 1*SECTOR_SIZE},
 			{"OPTEE-OS", 0x200000, 2*SECTOR_SIZE},
-			{"U-boot", 0x640000, 4*SECTOR_SIZE} };
+			{"U-boot", 0x640000, 4*SECTOR_SIZE},
+			{"Secure_store", STANDALONE_FS_SECTOR_ADDR,
+				STANDALONE_FS_SECTOR_NUM*SECTOR_SIZE} };
 
 
 /*This is called separately for reading*/
@@ -130,7 +134,7 @@ static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 /*(p[1].value.b - Boot Image Type */
 
 #define IMAGE_VERIFY_ON
-static TEE_Result wite_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
+static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 {
 	uint32_t i, ret;
 	uint32_t crc_orig = p[1].value.a, crc = crc32(0L, Z_NULL, 0);
@@ -231,7 +235,58 @@ static TEE_Result wite_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 
 }
 
+static TEE_Result erase_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
+{
+	uint32_t i, ret;
+	uint32_t len = p[0].value.b, count;
+	uint32_t addr = p[0].value.a;
+	uint32_t sectors = len / SECTOR_SIZE;
+	const char *image;
 
+	if (TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+			    TEE_PARAM_TYPE_VALUE_INPUT,
+			    TEE_PARAM_TYPE_NONE,
+			    TEE_PARAM_TYPE_NONE) != type) {
+		EMSG("Parameters check error\n");
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+
+	if (p[1].value.b >= MAX_IMAGES) {
+		EMSG("Image type error (%d)\n", p[1].value.b);
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+
+	image = img_params[p[1].value.b].img_name;
+
+	if ((addr != img_params[p[1].value.b].flash_addr) ||
+		(len > img_params[p[1].value.b].max_size)) {
+		EMSG("Image %s flash parameter error (addr = 0x%x(0x%x), len = %d(%d))\n",
+			image, addr, img_params[p[1].value.b].flash_addr, len, img_params[p[1].value.b].max_size);
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+
+	if (len % SECTOR_SIZE) {
+		sectors++;
+	}
+
+	ret = qspi_hyper_flash_init();
+	if (ret != FL_DRV_OK)
+		return TEE_ERROR_GENERIC;
+
+	for (i = 0; i < sectors; i++) {
+		ret = qspi_hyper_flash_erase(addr);
+		if (ret == FL_DRV_OK) {
+			count = len > SECTOR_SIZE ? SECTOR_SIZE : len;
+		} else {
+			EMSG("Image writing Error(%d)", ret);
+			return ret;
+		}
+		addr += count;
+		len -= count;
+	}
+
+	return TEE_SUCCESS;
+}
 
 static TEE_Result invoke_command(void *psess __unused,
 				 uint32_t cmd, uint32_t ptypes,
@@ -243,7 +298,9 @@ static TEE_Result invoke_command(void *psess __unused,
 	case HYPER_CMD_READ:
 		return read_hyper_drv(ptypes, params);
 	case HYPER_CMD_WRITE:
-		return wite_hyper_drv(ptypes, params);
+		return write_hyper_drv(ptypes, params);
+	case HYPER_CMD_ERASE:
+		return erase_hyper_drv(ptypes, params);
 	default:
 		break;
 	}
