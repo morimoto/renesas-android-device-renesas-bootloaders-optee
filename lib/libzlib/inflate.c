@@ -718,6 +718,7 @@ int flush;
             if (state->flags & 0x0200) CRC2(state->check, hold);
             INITBITS();
             state->mode = EXLEN;
+            __attribute__((fallthrough));
         case EXLEN:
             if (state->flags & 0x0400) {
                 NEEDBITS(16);
@@ -730,6 +731,7 @@ int flush;
             else if (state->head != Z_NULL)
                 state->head->extra = Z_NULL;
             state->mode = EXTRA;
+            __attribute__((fallthrough));
         case EXTRA:
             if (state->flags & 0x0400) {
                 copy = state->length;
@@ -752,6 +754,7 @@ int flush;
             }
             state->length = 0;
             state->mode = NAME;
+            __attribute__((fallthrough));
         case NAME:
             if (state->flags & 0x0800) {
                 if (have == 0) goto inf_leave;
@@ -773,6 +776,7 @@ int flush;
                 state->head->name = Z_NULL;
             state->length = 0;
             state->mode = COMMENT;
+            __attribute__((fallthrough));
         case COMMENT:
             if (state->flags & 0x1000) {
                 if (have == 0) goto inf_leave;
@@ -793,6 +797,7 @@ int flush;
             else if (state->head != Z_NULL)
                 state->head->comment = Z_NULL;
             state->mode = HCRC;
+            __attribute__((fallthrough));
         case HCRC:
             if (state->flags & 0x0200) {
                 NEEDBITS(16);
@@ -816,6 +821,7 @@ int flush;
             strm->adler = state->check = ZSWAP32(hold);
             INITBITS();
             state->mode = DICT;
+            __attribute__((fallthrough));
         case DICT:
             if (state->havedict == 0) {
                 RESTORE();
@@ -823,8 +829,10 @@ int flush;
             }
             strm->adler = state->check = adler32(0L, Z_NULL, 0);
             state->mode = TYPE;
+            __attribute__((fallthrough));
         case TYPE:
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
+            __attribute__((fallthrough));
         case TYPEDO:
             if (state->last) {
                 BYTEBITS();
@@ -875,8 +883,10 @@ int flush;
             INITBITS();
             state->mode = COPY_;
             if (flush == Z_TREES) goto inf_leave;
+            __attribute__((fallthrough));
         case COPY_:
             state->mode = COPY;
+            __attribute__((fallthrough));
         case COPY:
             copy = state->length;
             if (copy) {
@@ -1016,8 +1026,10 @@ int flush;
             Tracev((stderr, "inflate:       codes ok\n"));
             state->mode = LEN_;
             if (flush == Z_TREES) goto inf_leave;
+            __attribute__((fallthrough));
         case LEN_:
             state->mode = LEN;
+            __attribute__((fallthrough));
         case LEN:
             if (have >= 6 && left >= 258) {
                 RESTORE();
@@ -1067,6 +1079,7 @@ int flush;
             }
             state->extra = (unsigned)(here.op) & 15;
             state->mode = LENEXT;
+            __attribute__((fallthrough));
         case LENEXT:
             if (state->extra) {
                 NEEDBITS(state->extra);
@@ -1077,6 +1090,7 @@ int flush;
             Tracevv((stderr, "inflate:         length %u\n", state->length));
             state->was = state->length;
             state->mode = DIST;
+            __attribute__((fallthrough));
         case DIST:
             for (;;) {
                 here = state->distcode[BITS(state->distbits)];
@@ -1104,6 +1118,7 @@ int flush;
             state->offset = (unsigned)here.val;
             state->extra = (unsigned)(here.op) & 15;
             state->mode = DISTEXT;
+            __attribute__((fallthrough));
         case DISTEXT:
             if (state->extra) {
                 NEEDBITS(state->extra);
@@ -1120,6 +1135,7 @@ int flush;
 #endif
             Tracevv((stderr, "inflate:         distance %u\n", state->offset));
             state->mode = MATCH;
+            __attribute__((fallthrough));
         case MATCH:
             if (left == 0) goto inf_leave;
             copy = out - left;
@@ -1195,6 +1211,7 @@ int flush;
             }
 #ifdef GUNZIP
             state->mode = LENGTH;
+            __attribute__((fallthrough));
         case LENGTH:
             if (state->wrap && state->flags) {
                 NEEDBITS(32);
@@ -1208,6 +1225,7 @@ int flush;
             }
 #endif
             state->mode = DONE;
+            __attribute__((fallthrough));
         case DONE:
             ret = Z_STREAM_END;
             goto inf_leave;
@@ -1504,7 +1522,7 @@ z_streamp strm;
 {
     struct inflate_state FAR *state;
 
-    if (strm == Z_NULL || strm->state == Z_NULL) return -1L << 16;
+    if (strm == Z_NULL || strm->state == Z_NULL) return ((unsigned long)-1L) << 16;
     state = (struct inflate_state FAR *)strm->state;
     return ((long)(state->back) << 16) +
         (state->mode == COPY ? state->length :
