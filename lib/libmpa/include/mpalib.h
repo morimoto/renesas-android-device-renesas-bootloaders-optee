@@ -59,7 +59,7 @@ typedef struct mpa_numbase_struct {
 } mpa_num_base;
 
 /*/ mpanum is the type we use as parameters to function calls in this library */
-typedef mpa_num_base *mpanum;
+typedef mpa_num_base * __attribute__((__may_alias__)) mpanum;
 
 /*!
  * The Context struct for a Montgomery multiplication
