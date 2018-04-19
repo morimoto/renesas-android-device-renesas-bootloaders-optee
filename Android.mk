@@ -23,7 +23,7 @@ ANDROID_ROOT		:= $(shell cd $(OUT_DIR)/target/product/$(TARGET_PRODUCT) && cd ..
 
 OPTEE_SRC		:= device/renesas/bootloaders/optee
 OPTEE_OUT		:= $(ANDROID_ROOT)/$(OUT_DIR)/target/product/$(TARGET_PRODUCT)/obj/OPTEE_OBJ
-OPTEE_CROSS_COMPILE	:= $(ANDROID_ROOT)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu-7.2.1/bin/aarch64-linux-gnu-
+OPTEE_CROSS_COMPILE	:= $(ANDROID_ROOT)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu-7.1.1/bin/aarch64-linux-gnu-
 
 LOCAL_CFLAGS		+= -march=armv8-a
 LOCAL_CFLAGS		+= -mtune=cortex-a57.cortex-a53
