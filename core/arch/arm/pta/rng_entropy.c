@@ -25,12 +25,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <crypto/crypto.h>
 #include <kernel/pseudo_ta.h>
 #include <tee_api_types.h>
 #include <tee_api_defines.h>
 #include <tomcrypt.h>
 #include <trace.h>
-#include <tee/tee_cryp_provider.h>
 
 #define TA_NAME		"rng_entropy.ta"
 #define RNG_ENTROPY_UUID \
@@ -67,15 +67,9 @@ static TEE_Result TA_add_rng_entropy(const uint32_t ptypes,
 		EMSG("Wrong parameters\n");
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
-	if (!crypto_ops.prng.add_entropy) {
-		EMSG("Add PRNG Entropy function not implemented");
-		res = KM_ERROR_UNIMPLEMENTED;
-		goto out;
-	}
 	if (MAX_RNG_LENGTH > 0 && entropy_l > MAX_RNG_LENGTH)
 		entropy_l = MAX_RNG_LENGTH;
-	res = crypto_ops.prng.add_entropy(entropy, entropy_l);
-out:
+	res = crypto_rng_add_entropy(entropy, entropy_l);
 	return res;
 }
 
