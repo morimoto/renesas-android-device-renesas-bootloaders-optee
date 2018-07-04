@@ -25,12 +25,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <crypto/crypto.h>
 #include <kernel/pseudo_ta.h>
 #include <tee_api_types.h>
 #include <tee_api_defines.h>
 #include <tomcrypt.h>
 #include <trace.h>
-#include <tee/tee_cryp_provider.h>
 #include "mpa.h"
 #include "x509_attestation.h"
 #include "keymaster_defs.h"
@@ -329,11 +329,11 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 			if (nummpa->size == 0 || algorithm != ALGORITHM_RSA
 				|| *attrs_count > ATTR_COUNT_RSA)
 				break;
-			attr_size = crypto_ops.bignum.num_bytes(nummpa);
+			attr_size = crypto_bignum_num_bytes(nummpa);
 			res = getBuffer(attr_size, &buf);
 			if (res != CRYPT_OK)
 				goto out;
-			crypto_ops.bignum.bn2bin(nummpa, buf);
+			crypto_bignum_bn2bin(nummpa, buf);
 			offset += TA_push_to_output(output + offset,
 					buf, attr_size);
 			if (*attrs_count == 0)
@@ -414,7 +414,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->n);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert N to big number, res=%x", res);
@@ -430,7 +430,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->e);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert E to big number, res=%x", res);
@@ -447,7 +447,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->d);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert D to big number, res=%x", res);
@@ -463,7 +463,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->p);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert P to big number, res=%x", res);
@@ -479,7 +479,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->q);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert Q to big number, res=%x", res);
@@ -495,7 +495,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->dp);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert DP to big number, res=%x", res);
@@ -511,7 +511,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->dq);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert DQ to big number, res=%x", res);
@@ -527,7 +527,7 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->qp);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert QP to big number, res=%x", res);
@@ -551,36 +551,36 @@ static void free_rsa_keypair(struct rsa_keypair *keyPair)
 {
 	//Free keyPair
 	if (keyPair->d) {
-		crypto_ops.bignum.clear(keyPair->d);
-		crypto_ops.bignum.free(keyPair->d);
+		crypto_bignum_clear(keyPair->d);
+		crypto_bignum_free(keyPair->d);
 	}
 	if (keyPair->dp) {
-		crypto_ops.bignum.clear(keyPair->dp);
-		crypto_ops.bignum.free(keyPair->dp);
+		crypto_bignum_clear(keyPair->dp);
+		crypto_bignum_free(keyPair->dp);
 	}
 	if (keyPair->dq) {
-		crypto_ops.bignum.clear(keyPair->dq);
-		crypto_ops.bignum.free(keyPair->dq);
+		crypto_bignum_clear(keyPair->dq);
+		crypto_bignum_free(keyPair->dq);
 	}
 	if (keyPair->e) {
-		crypto_ops.bignum.clear(keyPair->e);
-		crypto_ops.bignum.free(keyPair->e);
+		crypto_bignum_clear(keyPair->e);
+		crypto_bignum_free(keyPair->e);
 	}
 	if (keyPair->n) {
-		crypto_ops.bignum.clear(keyPair->n);
-		crypto_ops.bignum.free(keyPair->n);
+		crypto_bignum_clear(keyPair->n);
+		crypto_bignum_free(keyPair->n);
 	}
 	if (keyPair->p) {
-		crypto_ops.bignum.clear(keyPair->p);
-		crypto_ops.bignum.free(keyPair->p);
+		crypto_bignum_clear(keyPair->p);
+		crypto_bignum_free(keyPair->p);
 	}
 	if (keyPair->q) {
-		crypto_ops.bignum.clear(keyPair->q);
-		crypto_ops.bignum.free(keyPair->q);
+		crypto_bignum_clear(keyPair->q);
+		crypto_bignum_free(keyPair->q);
 	}
 	if (keyPair->qp) {
-		crypto_ops.bignum.clear(keyPair->qp);
-		crypto_ops.bignum.free(keyPair->qp);
+		crypto_bignum_clear(keyPair->qp);
+		crypto_bignum_free(keyPair->qp);
 	}
 }
 
@@ -621,7 +621,7 @@ static TEE_Result TA_deserialize_ec_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->x);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert X to big number, res = %x", res);
@@ -637,7 +637,7 @@ static TEE_Result TA_deserialize_ec_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->y);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert Y to big number, res = %x", res);
@@ -654,7 +654,7 @@ static TEE_Result TA_deserialize_ec_keypair(const uint8_t *in,
 	size += sizeof(uint32_t);
 	memcpy(tmp_key_attr_buf, &in[size], key_attr_buf_size);
 	size += key_attr_buf_size;
-	res = crypto_ops.bignum.bin2bn(tmp_key_attr_buf, key_attr_buf_size,
+	res = crypto_bignum_bin2bn(tmp_key_attr_buf, key_attr_buf_size,
 				       keyPair->d);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to convert D to big number, res = %x", res);
@@ -678,16 +678,16 @@ static void free_ecc_keypair(struct ecc_keypair *keyPair)
 {
 	//Free keyPair
 	if (keyPair->d) {
-		crypto_ops.bignum.clear(keyPair->d);
-		crypto_ops.bignum.free(keyPair->d);
+		crypto_bignum_clear(keyPair->d);
+		crypto_bignum_free(keyPair->d);
 	}
 	if (keyPair->x) {
-		crypto_ops.bignum.clear(keyPair->x);
-		crypto_ops.bignum.free(keyPair->x);
+		crypto_bignum_clear(keyPair->x);
+		crypto_bignum_free(keyPair->x);
 	}
 	if (keyPair->y) {
-		crypto_ops.bignum.clear(keyPair->y);
-		crypto_ops.bignum.free(keyPair->y);
+		crypto_bignum_clear(keyPair->y);
+		crypto_bignum_free(keyPair->y);
 	}
 }
 
@@ -985,7 +985,7 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 		}
 		num_attr1->alloc = sizeof(struct bignum) +
 						BYTES_PER_WORD + attr1_l;
-		res = crypto_ops.bignum.bin2bn(attr1, attr1_l, num_attr1);
+		res = crypto_bignum_bin2bn(attr1, attr1_l, num_attr1);
 		if (res != CRYPT_OK) {
 			EMSG("Failed to convert bin to BN");
 			goto out;
@@ -1225,13 +1225,13 @@ static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
 	}
 	s->alloc = sizeof(struct bignum) + BYTES_PER_WORD + s_size;
 	r->alloc = sizeof(struct bignum) + BYTES_PER_WORD + r_size;
-	res = crypto_ops.bignum.bin2bn(params[0].memref.buffer, r_size, r);
+	res = crypto_bignum_bin2bn(params[0].memref.buffer, r_size, r);
 	if (res != CRYPT_OK) {
 		EMSG("Failed to convert r to big number");
 		goto out;
 	}
 
-	res = crypto_ops.bignum.bin2bn(params[1].memref.buffer, s_size, s);
+	res = crypto_bignum_bin2bn(params[1].memref.buffer, s_size, s);
 	if (res != CRYPT_OK) {
 		EMSG("Failed to convert s to big number");
 		goto out;
@@ -1319,14 +1319,14 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 		EMSG("Failed to decode sequence of EC signature");
 		goto out;
 	}
-	bn_size = crypto_ops.bignum.num_bytes(r);
+	bn_size = crypto_bignum_num_bytes(r);
 	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
-	crypto_ops.bignum.bn2bin(r, output + output_l);
+	crypto_bignum_bn2bin(r, output + output_l);
 	output_l += bn_size;
 
-	bn_size = crypto_ops.bignum.num_bytes(s);
+	bn_size = crypto_bignum_num_bytes(s);
 	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
-	crypto_ops.bignum.bn2bin(s, output + output_l);
+	crypto_bignum_bn2bin(s, output + output_l);
 	output_l += bn_size;
 out:
 	params[2].memref.size = output_l;
@@ -1366,7 +1366,6 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 	struct rsa_keypair *keyPair = NULL;
 
 	void *hashCtx = NULL;
-	size_t hashCtxSize = 0;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;
 
 	uint8_t *signature = NULL;
@@ -1402,7 +1401,7 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 		goto out;
 	}
 
-	res = crypto_ops.acipher.alloc_rsa_keypair(keyPair, RSA_KEY_SIZE);
+	res = crypto_acipher_alloc_rsa_keypair(keyPair, RSA_KEY_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate RSA keypair, res=%x", res);
 		goto out;
@@ -1435,33 +1434,27 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 	}
 
 	//Hash tbsCertificate
-	res = crypto_ops.hash.get_ctx_size(hashAlgo, &hashCtxSize);
-	if (res != TEE_SUCCESS) {
-		EMSG("Failed to get hash ctx size, res = %x", res);
-		goto out;
-	}
+	res = crypto_hash_alloc_ctx(&hashCtx, hashAlgo);
 
-	hashCtx = malloc(hashCtxSize);
-	if (!hashCtx) {
-		res = TEE_ERROR_OUT_OF_MEMORY;
+	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate memory for hash ctx");
 		goto out;
 	}
 
-	res = crypto_ops.hash.init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx, hashAlgo);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -1474,7 +1467,7 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 		goto out;
 	}
 	//Signature computed on ASN.1 DER-encoded tbsCertificate
-	res = crypto_ops.acipher.rsassa_sign(TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
+	res = crypto_acipher_rsassa_sign(TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
 					     keyPair, 0, hash_sha256,
 					     SHA256_BUFFER_SIZE,
 					     signature, &signature_size);
@@ -1554,7 +1547,6 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 	struct ecc_keypair keyPair;
 
 	void *hashCtx = NULL;
-	size_t hashCtxSize = 0;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;
 
 	uint8_t *signature = NULL;
@@ -1584,7 +1576,7 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 		goto out;
 	}
 
-	res = crypto_ops.acipher.alloc_ecc_keypair(&keyPair, EC_KEY_SIZE);
+	res = crypto_acipher_alloc_ecc_keypair(&keyPair, EC_KEY_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate EC keypair, res = %x", res);
 		goto out;
@@ -1618,33 +1610,27 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 	}
 
 	//Hash tbsCertificate
-	res = crypto_ops.hash.get_ctx_size(hashAlgo, &hashCtxSize);
-	if (res != TEE_SUCCESS) {
-		EMSG("Failed to get hash ctx size, res = %x", res);
-		goto out;
-	}
+	res = crypto_hash_alloc_ctx(&hashCtx, hashAlgo);
 
-	hashCtx = malloc(hashCtxSize);
-	if (!hashCtx) {
-		res = TEE_ERROR_OUT_OF_MEMORY;
+	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate memory for hash ctx");
 		goto out;
 	}
 
-	res = crypto_ops.hash.init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx, hashAlgo);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -1657,7 +1643,7 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 		goto out;
 	}
 	//Sign certificate
-	res = crypto_ops.acipher.ecc_sign(TEE_ALG_ECDSA_P256, &keyPair,
+	res = crypto_acipher_ecc_sign(TEE_ALG_ECDSA_P256, &keyPair,
 					  hash_sha256, SHA256_BUFFER_SIZE,
 					  signature, &signature_size);
 	if (res != TEE_SUCCESS) {
@@ -1750,7 +1736,6 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	struct rsa_keypair *keyPair = NULL;
 
 	void *hashCtx = NULL;
-	size_t hashCtxSize = 0;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;
 
 	uint8_t *signature = NULL;
@@ -1789,7 +1774,7 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 
-	res = crypto_ops.acipher.alloc_rsa_keypair(keyPair, RSA_KEY_SIZE);
+	res = crypto_acipher_alloc_rsa_keypair(keyPair, RSA_KEY_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate RSA keypair, res=%x", res);
 		goto out;
@@ -1859,33 +1844,27 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	}
 
 	//Hash tbsCertificate
-	res = crypto_ops.hash.get_ctx_size(hashAlgo, &hashCtxSize);
-	if (res != TEE_SUCCESS) {
-		EMSG("Failed to get hash ctx size, res = %x", res);
-		goto out;
-	}
+	res = crypto_hash_alloc_ctx(&hashCtx, hashAlgo);
 
-	hashCtx = malloc(hashCtxSize);
-	if (!hashCtx) {
-		res = TEE_ERROR_OUT_OF_MEMORY;
+	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate memory for hash ctx");
 		goto out;
 	}
 
-	res = crypto_ops.hash.init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx, hashAlgo);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -1898,7 +1877,7 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 	//Sign certificate
-	res = crypto_ops.acipher.rsassa_sign(TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
+	res = crypto_acipher_rsassa_sign(TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
 					     keyPair, 0, hash_sha256,
 					     SHA256_BUFFER_SIZE, signature,
 					     &signature_size);
@@ -1999,7 +1978,6 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	struct ecc_keypair keyPair;
 
 	void *hashCtx = NULL;
-	size_t hashCtxSize = 0;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;
 
 	uint8_t *signature = NULL;
@@ -2034,7 +2012,7 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 
-	res = crypto_ops.acipher.alloc_ecc_keypair(&keyPair, EC_KEY_SIZE);
+	res = crypto_acipher_alloc_ecc_keypair(&keyPair, EC_KEY_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate EC keypair, res = %x", res);
 		goto out;
@@ -2104,33 +2082,27 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	}
 
 	//Hash tbsCertificate
-	res = crypto_ops.hash.get_ctx_size(hashAlgo, &hashCtxSize);
-	if (res != TEE_SUCCESS) {
-		EMSG("Failed to get hash ctx size, res = %x", res);
-		goto out;
-	}
+	res = crypto_hash_alloc_ctx(&hashCtx, hashAlgo);
 
-	hashCtx = malloc(hashCtxSize);
-	if (!hashCtx) {
-		res = TEE_ERROR_OUT_OF_MEMORY;
+	if (res != TEE_SUCCESS) {
 		EMSG("Failed to allocate memory for hash ctx");
 		goto out;
 	}
 
-	res = crypto_ops.hash.init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx, hashAlgo);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_ops.hash.final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -2143,7 +2115,7 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 	//Sign certificate
-	res = crypto_ops.acipher.ecc_sign(TEE_ALG_ECDSA_P256, &keyPair,
+	res = crypto_acipher_ecc_sign(TEE_ALG_ECDSA_P256, &keyPair,
 					  hash_sha256, SHA256_BUFFER_SIZE,
 					  signature, &signature_size);
 	if (res != TEE_SUCCESS) {
