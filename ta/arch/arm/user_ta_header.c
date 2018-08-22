@@ -32,7 +32,7 @@
 #include <user_ta_header_defines.h>
 #include <trace.h>
 
-int trace_level = TRACE_LEVEL;
+int __attribute__ ((section (".data"))) trace_level = TRACE_LEVEL;
 
 const char trace_ext_prefix[]  = "TA";
 
