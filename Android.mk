@@ -20,7 +20,7 @@ ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
 PRODUCT_OUT_ABS      := $(abspath $(PRODUCT_OUT))
 OPTEE_SRC            := $(abspath ./device/renesas/bootloaders/optee)
-OPTEE_CROSS_COMPILE  := $(abspath ./prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu-7.1.1/bin/aarch64-linux-gnu-)
+OPTEE_CROSS_COMPILE  := $(abspath ./prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu/bin/aarch64-linux-gnu-)
 export OPTEE_OUT_DIR := $(PRODUCT_OUT_ABS)/obj/OPTEE_OBJ # exported to override defaults in mk/aosp_optee.mk
 
 LOCAL_CFLAGS		+= -march=armv8-a
