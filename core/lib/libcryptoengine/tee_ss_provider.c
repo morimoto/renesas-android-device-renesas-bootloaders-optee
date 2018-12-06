@@ -1254,6 +1254,17 @@ uint32_t crypto_hw_acipher_check_support(uint32_t algo, uint32_t modSize)
 	ret = crypto_hw_acipher_check_support_key(modSize);
 
 	switch ((int32_t)algo) {
+#if defined(CFG_CRYPT_ANDROID)
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_MD5:
+	case TEE_ALG_RSASSA_PKCS1_PSS_MGF1_MD5:
+#endif
+#if defined(CFG_CRYPT_ADAPT_BORING_SSL)
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1:
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA224:
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256:
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA384:
+	case TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA512:
+#endif
 	case TEE_ALG_RSASSA_PKCS1_V1_5_MD5:
 		ret = SS_HW_NOT_SUPPORT_ALG;
 		break;
@@ -2854,6 +2865,11 @@ TEE_Result crypto_hw_acipher_rsassa_sign(uint32_t algo, struct rsa_keypair *key,
 					&outputSize);
 		} else {
 			PROV_DMSG("CALL:  CRYS_RSA_PSS_Sign()\n");
+#if defined(CFG_CRYPT_ANDROID)
+			if (salt_len == -1) {
+				saltLen = hashSize;
+			}
+#endif
 			crys_res = CRYS_RSA_PSS_Sign(userContext_ptr,
 					userPrivKey_ptr, rsaHashMode, mgf,
 					saltLen, dataIn_ptr, dataInSize,
@@ -2966,6 +2982,11 @@ TEE_Result crypto_hw_acipher_rsassa_verify(uint32_t algo,
 					dataInSize, sig_ptr);
 		} else {
 			PROV_DMSG("CALL:  CRYS_RSA_PSS_Verify()\n");
+#if defined(CFG_CRYPT_ANDROID)
+			if (salt_len == -1) {
+			     salt_len = hashSize;
+			}
+#endif
 			crys_res = CRYS_RSA_PSS_Verify(userContext_ptr,
 					userPubKey_ptr, rsaHashMode, mgf,
 					saltLen, dataIn_ptr, dataInSize,
@@ -2982,6 +3003,12 @@ TEE_Result crypto_hw_acipher_rsassa_verify(uint32_t algo,
 
 	ss_free((void *)userContext_ptr);
 	ss_free((void *)userPubKey_ptr);
+
+#if defined(CFG_CRYPT_ANDROID_CTS_ERROR_CODE)
+	if (res != SS_SUCCESS) {
+		res = SS_ERROR_SIGNATURE_INVALID;
+	}
+#endif
 
 	tee_res = ss_translate_error_ss2tee(res);
 	PROV_OUTMSG("return res=0x%08x -> tee_res=0x%08x\n",res,tee_res);
@@ -3618,6 +3645,12 @@ TEE_Result crypto_hw_acipher_ecc_verify(struct ecc_public_key *key,
 #else
 	PROV_DMSG("USE Crypto Engine Secure\n");
 	res = ss_ecc_verify_secure(key,msg,msg_len,sig,sig_len);
+#endif
+
+#if defined(CFG_CRYPT_ANDROID_CTS_ERROR_CODE)
+	if (res != SS_SUCCESS) {
+		res = SS_ERROR_SIGNATURE_INVALID;
+	}
 #endif
 
 	tee_res = ss_translate_error_ss2tee(res);

@@ -14,3 +14,8 @@ cflags-tee_ss_provider.c-y += -Wno-undef -Wno-maybe-uninitialized
 
 # Common Function for Provider
 srcs-y += tee_provider_common.c
+
+ifeq ($(CFG_CRYPT_ANDROID),y)
+CFG_CRYPT_ANDROID_CTS_ERROR_CODE ?= y
+CFG_CRYPT_ADAPT_BORING_SSL ?= y
+endif
