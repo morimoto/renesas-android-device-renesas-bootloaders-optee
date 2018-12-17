@@ -136,17 +136,17 @@ static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 #define IMAGE_VERIFY_ON
 static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 {
-	uint32_t i, ret;
+	uint32_t ret;
 	uint32_t crc_orig = p[1].value.a, crc = crc32(0L, Z_NULL, 0);
 	uint8_t *buf = (uint8_t *)p[3].memref.buffer;
-	uint32_t len = p[0].value.b, count;
+	uint32_t len = p[0].value.b;
 	uint32_t addr = p[0].value.a;
-	uint32_t sectors = len / SECTOR_SIZE;
+	uint32_t sector_offset = p[2].value.a;
 	const char *image;
 
 	if (TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 			    TEE_PARAM_TYPE_VALUE_INPUT,
-			    TEE_PARAM_TYPE_NONE,
+			    TEE_PARAM_TYPE_VALUE_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_INOUT) != type) {
 		EMSG("Parameters check error\n");
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -159,8 +159,8 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 
 	image = img_params[p[1].value.b].img_name;
 
-	if ((addr != img_params[p[1].value.b].flash_addr) ||
-		(len > img_params[p[1].value.b].max_size)) {
+	if (((addr < (img_params[p[1].value.b].flash_addr + sector_offset * SECTOR_SIZE))) ||
+		(len > SECTOR_SIZE) || ((sector_offset + 1) * SECTOR_SIZE) > img_params[p[1].value.b].max_size) {
 		EMSG("Image %s flash parameter error (addr = 0x%x, len = %d)\n",
 			image, addr, len);
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -173,29 +173,14 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 		return TEE_ERROR_SIGNATURE_INVALID;
 	}
 
-	if (len % SECTOR_SIZE) {
-		sectors++;
-	}
 	ret = qspi_hyper_flash_init();
 	if (ret != FL_DRV_OK) {
 		return TEE_ERROR_GENERIC;
 	}
-	DMSG("Image: %s, sectors = %d\n", image, sectors);
 
-	for (i = 0; i < sectors; i++) {
-		ret = qspi_hyper_flash_erase(addr);
-		if (ret == FL_DRV_OK) {
-			count = len > SECTOR_SIZE ? SECTOR_SIZE : len;
-			ret = qspi_hyper_flash_write(addr, buf, count);
-			if (ret != FL_DRV_OK) {
-				break;
-			}
-		} else
-			break;
-		addr += count;
-		buf += count;
-		len -= count;
-	}
+	ret = qspi_hyper_flash_erase(addr);
+	if (ret == FL_DRV_OK)
+		ret = qspi_hyper_flash_write(addr, buf, len);
 
 	if (ret != FL_DRV_OK) {
 		EMSG("Image writing Error(%d)", ret);
@@ -213,16 +198,8 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 	addr = p[0].value.a;
 	memset(buf, 0, len);
 	crc = crc32(0L, Z_NULL, 0);
-	for (i = 0; i < sectors; i++) {
-		count = len > SECTOR_SIZE ? SECTOR_SIZE : len;
-		ret = qspi_hyper_flash_read(addr, buf, count);
-		if (ret != FL_DRV_OK) {
-			break;
-		}
-		addr += count;
-		buf += count;
-		len -= count;
-	}
+	qspi_hyper_flash_read(addr, buf, len);
+
 	crc = crc32(crc, p[3].memref.buffer, p[0].value.b);
 	if (crc != crc_orig) {
 		EMSG("Image verification failed! CRC error (0x%x != 0x%x)"
@@ -230,7 +207,7 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 		return TEE_ERROR_GENERIC;
 	}
 #endif
-	DMSG("%s Image updated successfully\n", image);
+	DMSG("%s Image sector %d updated successfully\n", image, sector_offset);
 	return TEE_SUCCESS;
 
 }
