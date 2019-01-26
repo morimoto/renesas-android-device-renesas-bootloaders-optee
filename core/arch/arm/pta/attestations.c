@@ -16,6 +16,7 @@
 
 /* File contains functions, which provide X.509 support for attestation. */
 #include "x509_attestation.h"
+#include <mpa.h>
 
 const unsigned long unitName_oid[] = { 2, 5, 4, 11 };
 const unsigned long organizationName_oid[] = { 2, 5, 4, 10 };
@@ -182,27 +183,29 @@ void rsaAlgIdEncode(der_algId *algId)
 	encodeAlgOidRSA(algId, &rsaOidSt);
 }
 
-/* DER encoded ECC AlgId for SubjectPublicKeyInfo */
-void eccAlgIdEncode(der_algId *algId, uint32_t curve)
+/* DER encoded ECC AlgId for SubjectPublicKeyInfo
+ * return bytelength of point's coordinate
+ */
+ULONG eccAlgIdEncode(der_algId *algId, uint32_t curve)
 {
 	switch (curve) {
 	case TEE_ECC_CURVE_NIST_P192:
 		encodeAlgOidECC_SPK(algId, ecOidSt192);
-		return;
+		return BITS_TO_BYTES(EC_KEY_SIZE_NIST_192);
 	case TEE_ECC_CURVE_NIST_P224:
 		encodeAlgOidECC_SPK(algId, ecOidSt224);
-		return;
+		return BITS_TO_BYTES(EC_KEY_SIZE_NIST_224);
 	case TEE_ECC_CURVE_NIST_P256:
 		encodeAlgOidECC_SPK(algId, ecOidSt256);
-		return;
+		return BITS_TO_BYTES(EC_KEY_SIZE_NIST_256);
 	case TEE_ECC_CURVE_NIST_P384:
 		encodeAlgOidECC_SPK(algId, ecOidSt384);
-		return;
+		return BITS_TO_BYTES(EC_KEY_SIZE_NIST_384);
 	case TEE_ECC_CURVE_NIST_P521:
 		encodeAlgOidECC_SPK(algId, ecOidSt521);
-		return;
+		return BITS_TO_BYTES(EC_KEY_SIZE_NIST_521);
 	default:
-		return;
+		return 0;
 	}
 }
 

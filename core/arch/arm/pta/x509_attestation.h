@@ -41,6 +41,13 @@
 #define TEE_ECC_CURVE_NIST_P384             0x00000004
 #define TEE_ECC_CURVE_NIST_P521             0x00000005
 
+/* key sizes (in bits) of supported ECC Curves */
+#define EC_KEY_SIZE_NIST_192 192
+#define EC_KEY_SIZE_NIST_224 224
+#define EC_KEY_SIZE_NIST_256 256
+#define EC_KEY_SIZE_NIST_384 384
+#define EC_KEY_SIZE_NIST_521 521
+
 #define RSA_MAX_KEY_BUFFER_SIZE (RSA_MAX_KEY_SIZE / 8)
 #define EC_MAX_KEY_BUFFER_SIZE (EC_MAX_KEY_SIZE / 8 + 1)
 
@@ -273,7 +280,7 @@ int encode_ecc_sign_256(uint8_t *sign, ULONG *sign_size);
 /* Functions from attestation.c */
 void rootAlgIdEncode(der_algId *algId, const int rsa);
 void rsaAlgIdEncode(der_algId *algId);
-void eccAlgIdEncode(der_algId *algId, uint32_t curve);
+ULONG eccAlgIdEncode(der_algId *algId, uint32_t curve);
 void rootNameEncode(ltc_asn1_list *name, der_oidName *derNames, ULONG size,
 		    int rsa);
 void attestNameEncode(ltc_asn1_list *name, der_oidName *derNames, ULONG size);
