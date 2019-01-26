@@ -295,25 +295,27 @@ int encodeSubPubKeyInfoECC_BN(der_eccKeyInfo *eccKeyInfo, uint32_t curve,
 			      unsigned char **pk, ULONG *pk_size)
 {
 	int res;
+	ULONG key_size; /* size of field's element. */
 	*pk_size = 0;
 	*pk = NULL;
 
-	eccAlgIdEncode(&eccKeyInfo->algId, curve);
+	key_size = eccAlgIdEncode(&eccKeyInfo->algId, curve);
 
 	/* counting size of PK = size(x) + size(y) + 1 */
-	*pk_size = ltc_mp.unsigned_size(x) + ltc_mp.unsigned_size(y) + 1;
+	*pk_size = 2 * key_size + 1;
 	*pk = malloc(*pk_size);
 
 	if (!(*pk))
 		return 1;
+	memset(*pk, 0, *pk_size);
 
 	/* Firs byte of octet PK is 0x04 (SEC 1: Elliptic Curve Cryptography) */
 	(*pk)[0] = 0x04;
-	res = ltc_mp.unsigned_write(x, (*pk) + 1);
+	res = ltc_mp.unsigned_write(x, (*pk) + 1 + key_size - ltc_mp.unsigned_size(x));
 	if (res != CRYPT_OK)
 		return res;
 
-	res = ltc_mp.unsigned_write(y, (*pk) + 1 + ltc_mp.unsigned_size(x));
+	res = ltc_mp.unsigned_write(y, (*pk) + 1 + 2 * key_size - ltc_mp.unsigned_size(y));
 	if (res != CRYPT_OK)
 		return res;
 
