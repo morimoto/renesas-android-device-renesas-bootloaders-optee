@@ -25,7 +25,7 @@ $(eval _O:=$(if $(O),$(O),.))$(wildcard $(addprefix $(_O)/,$(call _reverse,
 			   $(call enum-parent-dirs,$(d)))))))
 endef
 
-RMDIR := rmdir --ignore-fail-on-non-empty
+RMDIR := /bin/rmdir --ignore-fail-on-non-empty
 
 # Remove files with "rm -f".
 # Split (possibly huge) file list into more manageable lines

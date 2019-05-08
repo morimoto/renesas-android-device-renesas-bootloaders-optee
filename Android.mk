@@ -1,6 +1,6 @@
 #
-# Copyright (C) 2011 The Android Open-Source Project
-# Copyright (C) 2018 GlobalLogic
+# Copyright (C) 2019 The Android Open-Source Project
+# Copyright (C) 2019 GlobalLogic
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,63 +20,36 @@ ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
 PRODUCT_OUT_ABS      := $(abspath $(PRODUCT_OUT))
 OPTEE_SRC            := $(abspath ./device/renesas/bootloaders/optee)
-OPTEE_CROSS_COMPILE  := $(BSP_CROSS_COMPILE)
-export OPTEE_OUT_DIR := $(PRODUCT_OUT_ABS)/obj/OPTEE_OBJ # exported to override defaults in mk/aosp_optee.mk
+OPTEE_OUT_DIR        := $(PRODUCT_OUT_ABS)/obj/OPTEE_OBJ
 
-LOCAL_CFLAGS		+= -march=armv8-a
-LOCAL_CFLAGS		+= -mtune=cortex-a57.cortex-a53
+OPTEE_BUILD_FLAGS    := CFG_ARM64_core=y PLATFORM=rcar RMDIR=$(RMDIR) MAKEFLAGS=
+OPTEE_BUILD_FLAGS    += CFLAGS="-march=armv8-a -mtune=cortex-a57.cortex-a53"
 
-$(OPTEE_OUT_DIR):
-	$(hide) mkdir -p $(OPTEE_OUT_DIR)
+# Proper RMDIR definition for Android Q build environment
+RMDIR                := "/bin/rmdir --ignore-fail-on-non-empty"
+MAKE                 := `which make`
+MKDIR                := `which mkdir`
 
-optee: $(OPTEE_OUT_DIR)
-	@echo "Building optee"
-	$(hide) ARCH=arm make -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(OPTEE_CROSS_COMPILE) clean
-	$(hide) ARCH=arm make -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(OPTEE_CROSS_COMPILE) all
-	$(hide) cp $(OPTEE_OUT_DIR)/core/*.srec $(PRODUCT_OUT_ABS)/
-	$(hide) cp $(OPTEE_OUT_DIR)/core/*.bin $(PRODUCT_OUT_ABS)/
+.PHONY: optee-out-dir
+optee-out-dir:
+	$(MKDIR) -p $(OPTEE_OUT_DIR)
 
-android_optee: $(OPTEE_OUT_DIR)
-	@echo "Building optee"
-	$(hide) ARCH=arm make -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(OPTEE_CROSS_COMPILE) clean
-	$(hide) ARCH=arm make -e MAKEFLAGS= CFG_ARM64_core=y PLATFORM=rcar -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(OPTEE_CROSS_COMPILE) all
+.PHONY: optee-android
+optee-android: optee-out-dir
+	@echo "Building OPTEE-ANDROID"
+	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) RMDIR=$(RMDIR) clean
+	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) all
 
-.PHONY: optee
+.PHONY: tee.bin
+tee.bin: optee-android
+	cp $(OPTEE_OUT_DIR)/core/tee.bin $(PRODUCT_OUT_ABS)/tee.bin
 
+.PHONY: tee_hf.bin
+tee_hf.bin: optee-android
+	cp $(OPTEE_OUT_DIR)/core/tee.bin $(PRODUCT_OUT_ABS)/tee_hf.bin
 
-LOCAL_PATH := $(call my-dir)
-include $(CLEAR_VARS)
-
-TEE_BIN_PATH := $(OPTEE_OUT_DIR)/core/tee.bin
-$(TEE_BIN_PATH): android_optee
-
-LOCAL_MODULE := tee.bin
-LOCAL_PREBUILT_MODULE_FILE:= $(TEE_BIN_PATH)
-LOCAL_MODULE_PATH := $(PRODUCT_OUT_ABS)
-
-include $(BUILD_EXECUTABLE)
-
-include $(CLEAR_VARS)
-
-TEE_BIN_PATH := $(OPTEE_OUT_DIR)/core/tee.bin
-$(TEE_BIN_PATH): android_optee
-
-LOCAL_MODULE := tee_hf.bin
-LOCAL_PREBUILT_MODULE_FILE:= $(TEE_BIN_PATH)
-LOCAL_MODULE_PATH := $(PRODUCT_OUT_ABS)
-
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-
-TEE_SREC_PATH := $(OPTEE_OUT_DIR)/core/tee.srec
-$(TEE_SREC_PATH): android_optee
-
-LOCAL_MODULE := tee_hf.srec
-LOCAL_PREBUILT_MODULE_FILE:= $(TEE_SREC_PATH)
-LOCAL_MODULE_PATH := $(PRODUCT_OUT_ABS)
-
-include $(BUILD_EXECUTABLE)
+.PHONY: tee_hf.srec
+tee_hf.srec: optee-android
+	cp $(OPTEE_OUT_DIR)/core/tee.srec $(PRODUCT_OUT_ABS)/tee_hf.srec
 
 endif # TARGET_PRODUCT salvator ulcb kingfisher
