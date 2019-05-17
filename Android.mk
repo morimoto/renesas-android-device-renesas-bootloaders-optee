@@ -18,38 +18,53 @@
 # Include only for Renesas ones.
 ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
-PRODUCT_OUT_ABS      := $(abspath $(PRODUCT_OUT))
 OPTEE_SRC            := $(abspath ./device/renesas/bootloaders/optee)
-OPTEE_OUT_DIR        := $(PRODUCT_OUT_ABS)/obj/OPTEE_OBJ
-
+OPTEE_OBJ            := $(PRODUCT_OUT)/obj/OPTEE_OBJ
+OPTEE_BINARY         := $(OPTEE_OBJ)/core/tee.bin
+OPTEE_SREC           := $(OPTEE_OBJ)/core/tee.srec
+OPTEE_OUT_DIR        := $(abspath $(OPTEE_OBJ))
 OPTEE_BUILD_FLAGS    := CFG_ARM64_core=y PLATFORM=rcar RMDIR=$(RMDIR) MAKEFLAGS=
 OPTEE_BUILD_FLAGS    += CFLAGS="-march=armv8-a -mtune=cortex-a57.cortex-a53"
 
 # Proper RMDIR definition for Android Q build environment
 RMDIR                := "/bin/rmdir --ignore-fail-on-non-empty"
-MAKE                 := `which make`
-MKDIR                := `which mkdir`
+MAKE                 := /usr/bin/make`
+MKDIR                := /bin/mkdir
 
-.PHONY: optee-out-dir
-optee-out-dir:
-	$(MKDIR) -p $(OPTEE_OUT_DIR)
-
-.PHONY: optee-android
-optee-android: optee-out-dir
+#.PHONY: $(OPTEE_BINARY)
+$(OPTEE_BINARY):
 	@echo "Building OPTEE-ANDROID"
+	$(MKDIR) -p $(OPTEE_OUT_DIR)
 	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) RMDIR=$(RMDIR) clean
 	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) all
 
-.PHONY: tee.bin
-tee.bin: optee-android
-	cp $(OPTEE_OUT_DIR)/core/tee.bin $(PRODUCT_OUT_ABS)/tee.bin
+$(OPTEE_SREC): $(OPTEE_BINARY)
 
-.PHONY: tee_hf.bin
-tee_hf.bin: optee-android
-	cp $(OPTEE_OUT_DIR)/core/tee.bin $(PRODUCT_OUT_ABS)/tee_hf.bin
+include $(CLEAR_VARS)
+LOCAL_MODULE                := tee.bin
+LOCAL_PREBUILT_MODULE_FILE  := $(OPTEE_BINARY)
+LOCAL_MODULE_PATH           := $(PRODUCT_OUT)
+LOCAL_MODULE_CLASS          := FIRMWARE
+include $(BUILD_PREBUILT)
 
-.PHONY: tee_hf.srec
-tee_hf.srec: optee-android
-	cp $(OPTEE_OUT_DIR)/core/tee.srec $(PRODUCT_OUT_ABS)/tee_hf.srec
+$(LOCAL_BUILT_MODULE): $(OPTEE_BINARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE                := tee_hf.bin
+LOCAL_PREBUILT_MODULE_FILE  := $(OPTEE_BINARY)
+LOCAL_MODULE_PATH           := $(PRODUCT_OUT)
+LOCAL_MODULE_CLASS          := FIRMWARE
+include $(BUILD_PREBUILT)
+
+$(LOCAL_BUILT_MODULE): $(OPTEE_BINARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE                := tee_hf.srec
+LOCAL_PREBUILT_MODULE_FILE  := $(OPTEE_SREC)
+LOCAL_MODULE_PATH           := $(PRODUCT_OUT)
+LOCAL_MODULE_CLASS          := FIRMWARE
+include $(BUILD_PREBUILT)
+
+$(LOCAL_BUILT_MODULE): $(OPTEE_SREC)
 
 endif # TARGET_PRODUCT salvator ulcb kingfisher
