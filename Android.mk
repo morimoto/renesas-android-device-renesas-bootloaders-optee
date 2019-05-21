@@ -28,15 +28,14 @@ OPTEE_BUILD_FLAGS    += CFLAGS="-march=armv8-a -mtune=cortex-a57.cortex-a53"
 
 # Proper RMDIR definition for Android Q build environment
 RMDIR                := "/bin/rmdir --ignore-fail-on-non-empty"
-MAKE                 := /usr/bin/make`
 MKDIR                := /bin/mkdir
 
 #.PHONY: $(OPTEE_BINARY)
 $(OPTEE_BINARY):
 	@echo "Building OPTEE-ANDROID"
 	$(MKDIR) -p $(OPTEE_OUT_DIR)
-	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) RMDIR=$(RMDIR) clean
-	$(hide) ARCH=arm $(MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) all
+	$(hide) ARCH=arm $(ANDROID_MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) RMDIR=$(RMDIR) clean
+	$(hide) ARCH=arm $(ANDROID_MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) all
 
 $(OPTEE_SREC): $(OPTEE_BINARY)
 
