@@ -1370,7 +1370,7 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 	ltc_asn1_list Certificate[CERT_SIZE];
 	der_TBS *tbsCertificate = NULL;
 	der_algId algId;
-	unsigned char *pk;
+	unsigned char *pk = NULL;
 	ULONG pk_size = 0;
 	//End certificate data
 
@@ -1551,7 +1551,7 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 	ltc_asn1_list Certificate[CERT_SIZE];
 	der_TBS *tbsCertificate = NULL;
 	der_algId algId;
-	unsigned char *pk;
+	unsigned char *pk = NULL;
 	ULONG pk_size = 0;
 	//End certificate data
 
@@ -1740,9 +1740,9 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	ltc_asn1_list Certificate[CERT_SIZE];
 	der_TBS_ATTEST *tbsCertificate = NULL;
 	der_algId algId;
-	unsigned char *pk;
+	unsigned char *pk = NULL;
 	ULONG pk_size = 0;
-	unsigned char *attestExt;
+	unsigned char *attestExt = NULL;
 	//End certificate data
 
 	if (!params[0].memref.buffer || !key_charact || !root_key_attr ||
@@ -1982,9 +1982,9 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	ltc_asn1_list Certificate[CERT_SIZE];
 	der_TBS_ATTEST *tbsCertificate = NULL;
 	der_algId algId;
-	unsigned char *pk;
+	unsigned char *pk = NULL;
 	ULONG pk_size = 0;
-	unsigned char *attestExt;
+	unsigned char *attestExt = NULL;
 	//End certificate data
 
 	if (!params[0].memref.buffer || !key_charact || !root_key_attr ||
