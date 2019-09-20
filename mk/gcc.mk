@@ -1,5 +1,9 @@
 
+ifdef SB
+CC$(sm)		:= $(CC)
+else
 CC$(sm)		:= $(CROSS_COMPILE_$(sm))gcc
+endif
 CPP$(sm)	:= $(CROSS_COMPILE_$(sm))cpp
 LD$(sm)		:= $(CROSS_COMPILE_$(sm))ld.bfd
 AR$(sm)		:= $(CROSS_COMPILE_$(sm))ar
