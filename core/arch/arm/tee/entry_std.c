@@ -135,7 +135,7 @@ static TEE_Result copy_in_params(const struct optee_msg_param *params,
 {
 	TEE_Result res;
 	size_t n;
-	uint8_t pt[TEE_NUM_PARAMS];
+	uint8_t pt[TEE_NUM_PARAMS] = {0};
 
 	if (num_params > TEE_NUM_PARAMS)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -295,7 +295,7 @@ static void entry_open_session(struct thread_smc_args *smc_args,
 	TEE_UUID uuid;
 	struct tee_ta_param param;
 	size_t num_meta;
-	uint64_t saved_attr[TEE_NUM_PARAMS];
+	uint64_t saved_attr[TEE_NUM_PARAMS] = {0};
 
 	res = get_open_session_meta(num_params, arg->params, &num_meta, &uuid,
 				    &clnt_id);
@@ -363,7 +363,7 @@ static void entry_invoke_command(struct thread_smc_args *smc_args,
 	TEE_ErrorOrigin err_orig = TEE_ORIGIN_TEE;
 	struct tee_ta_session *s;
 	struct tee_ta_param param;
-	uint64_t saved_attr[TEE_NUM_PARAMS];
+	uint64_t saved_attr[TEE_NUM_PARAMS] = {0};
 
 	bm_timestamp();
 

@@ -108,8 +108,10 @@ static TEE_Result get_elf_segments(struct user_ta_ctx *utc,
 						&flags, &type);
 		if (res == TEE_ERROR_ITEM_NOT_FOUND)
 			break;
-		if (res != TEE_SUCCESS)
+		if (res != TEE_SUCCESS) {
+			free(segs);
 			return res;
+		}
 
 		if (type == PT_LOAD) {
 			void *p = realloc(segs, (num_segs + 1) * sizeof(*segs));
