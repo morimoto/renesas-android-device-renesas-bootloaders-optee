@@ -682,13 +682,15 @@ static TEE_Result tee_svc_storage_set_enum(struct tee_fs_dirent *d,
 	if (d->oidlen > TEE_OBJECT_ID_MAX_LEN)
 		return TEE_ERROR_CORRUPT_OBJECT;
 
+	o->pobj->obj_id_len = d->oidlen;
+	o->pobj->fops = fops;
+	/* Set fops before allocation because it is used in allocation error handler */
+
 	o->pobj->obj_id = malloc(d->oidlen);
 	if (!o->pobj->obj_id)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
-	memcpy(o->pobj->obj_id, d->oid, d->oidlen);
-	o->pobj->obj_id_len = d->oidlen;
-	o->pobj->fops = fops;
+	memcpy(o->pobj->obj_id, d->oid, d->oidlen);;
 
 	return TEE_SUCCESS;
 }

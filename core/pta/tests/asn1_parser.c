@@ -254,6 +254,7 @@ static int TA_bits_to_bytes(struct blob *point,
 
 	point->data_length = list->size / 8;
 	point->data = malloc(point->data_length);
+	memset(point->data, 0, point->data_length);
 	if (!point->data) {
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		EMSG("Failed to allocate memory for bytes converted from bits");
@@ -671,6 +672,8 @@ out:
 
 static void free_ecc_keypair(struct ecc_keypair *keyPair)
 {
+	if (!keyPair)
+		return;
 	//Free keyPair
 	if (keyPair->d) {
 		crypto_bignum_clear(keyPair->d);
@@ -1539,7 +1542,7 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 	uint8_t *output_certificate = params[1].memref.buffer;
 	size_t output_certificate_size = params[1].memref.size;
 
-	struct ecc_keypair keyPair;
+	struct ecc_keypair keyPair = {0};
 
 	void *hashCtx = NULL;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;
@@ -1718,8 +1721,8 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	uint32_t params_characts_size = params[1].memref.size;
 	uint32_t key_charact_size = 0;
 	uint32_t att_params_size = 0;
-	keymaster_key_characteristics_t characteristics;
-	keymaster_key_param_set_t attest_params;
+	keymaster_key_characteristics_t characteristics = {0};
+	keymaster_key_param_set_t attest_params = {0};
 	uint8_t verified_boot_state = 0xff;
 
 	uint8_t *root_key_attr = params[2].memref.buffer;
@@ -1960,8 +1963,8 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	uint32_t params_characts_size = params[1].memref.size;
 	uint32_t key_charact_size = 0;
 	uint32_t att_params_size = 0;
-	keymaster_key_characteristics_t characteristics;
-	keymaster_key_param_set_t attest_params;
+	keymaster_key_characteristics_t characteristics = {0};
+	keymaster_key_param_set_t attest_params = {0};
 	uint8_t verified_boot_state = 0xff;
 
 	uint8_t *root_key_attr = params[2].memref.buffer;
@@ -1970,7 +1973,7 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	uint8_t *output_certificate = params[3].memref.buffer;
 	size_t output_certificate_size = params[3].memref.size;
 
-	struct ecc_keypair keyPair;
+	struct ecc_keypair keyPair = {0};
 
 	void *hashCtx = NULL;
 	const uint32_t hashAlgo = TEE_ALG_SHA256;

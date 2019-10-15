@@ -83,6 +83,8 @@ void TEE_RestrictObjectUsage(TEE_ObjectHandle object, uint32_t objectUsage)
 	TEE_ObjectInfo objectInfo;
 
 	res = utee_cryp_obj_get_info((unsigned long)object, &objectInfo);
+	if (res != TEE_SUCCESS)
+		TEE_Panic(res);
 	if (objectInfo.objectType == TEE_TYPE_CORRUPTED_OBJECT)
 		return;
 
@@ -320,6 +322,8 @@ void TEE_CopyObjectAttributes(TEE_ObjectHandle destObject,
 	TEE_ObjectInfo src_info;
 
 	res = utee_cryp_obj_get_info((unsigned long)srcObject, &src_info);
+	if (res != TEE_SUCCESS)
+		TEE_Panic(res);
 	if (src_info.objectType == TEE_TYPE_CORRUPTED_OBJECT)
 		return;
 

@@ -235,6 +235,9 @@ static void hardcodeEndTime(ltc_utctime *derTime)
 
 void encodeHardcodedValidity(der_Validity *validity)
 {
+	if (!validity)
+		return;
+
 	hardcodeStartTime(&validity->notBefore);
 	hardcodeEndTime(&validity->notAfter);
 
@@ -340,14 +343,15 @@ int encodeSubPubKeyInfoRSA(der_rsaKeyInfo *rsaKeyInfo,
 		goto exit;
 	res = createBigNum(&e, exp, e_size);
 	if (res != CRYPT_OK)
-		goto exit;
+		goto exit_free_m;
 
 	res = encodeSubPubKeyInfoRSA_BN(rsaKeyInfo, m, e, pk, pk_size);
 
-exit:
 	/* free bignums */
-	ltc_mp.deinit(m);
 	ltc_mp.deinit(e);
+exit_free_m:
+	ltc_mp.deinit(m);
+exit:
 
 	return res;
 }
@@ -365,14 +369,15 @@ int encodeSubPubKeyInfoECC(der_eccKeyInfo *eccKeyInfo, uint32_t curve,
 		goto exit;
 	res = createBigNum(&yv, y, y_size);
 	if (res != CRYPT_OK)
-		goto exit;
+		goto exit_free_xv;
 
 	res = encodeSubPubKeyInfoECC_BN(eccKeyInfo, curve, xv, yv, pk, pk_size);
 
-exit:
 	/* free bignums */
-	ltc_mp.deinit(xv);
 	ltc_mp.deinit(yv);
+exit_free_xv:
+	ltc_mp.deinit(xv);
+exit:
 
 	return res;
 }
@@ -890,15 +895,14 @@ int encode_ecc_sign_256(uint8_t *sign, ULONG *sign_size)
 {
 	uint32_t res = CRYPT_OK;
 	ULONG key_size = *sign_size / 2;
-	void *r;
-	void *s;
+	void *r, *s;
 
 	res = createBigNum(&r, (void *)sign, key_size);
 	if (res != CRYPT_OK)
 		goto exit;
 	res = createBigNum(&s, (void *)(sign + key_size), key_size);
 	if (res != CRYPT_OK)
-		goto exit;
+		goto exit_free_r;
 
 	*sign_size = EC_SIGN_BUFFER_SIZE;
 	res = der_encode_sequence_multi(sign, sign_size,
@@ -908,9 +912,10 @@ int encode_ecc_sign_256(uint8_t *sign, ULONG *sign_size)
 	if (res != CRYPT_OK)
 		EMSG("Failed to encode EC sign res = %x", res);
 
-exit:
-	ltc_mp.deinit(r);
 	ltc_mp.deinit(s);
+exit_free_r:
+	ltc_mp.deinit(r);
+exit:
 
 	return res;
 }
