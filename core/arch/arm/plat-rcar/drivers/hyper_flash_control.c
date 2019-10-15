@@ -215,8 +215,18 @@ static uint32_t hyper_flash_write_main(uint32_t buf_addr,
 			}
 			ret = hyper_flash_request_write_buffer(work_flash_addr,
 							write_data_addr);
+			if (ret != FL_DRV_OK) {
+				break;
+			}
 			work_flash_addr += WRITE_BUFF_SIZE;
 			write_data_addr += WRITE_BUFF_SIZE;
+		}
+
+		if (ret != FL_DRV_OK) {
+			EMSG("hyper_flash_write_buffer failed. r=%x\n", ret);
+			/* Skip error checking here because we already have an error */
+			(void)set_rpc_clock_mode(rpc_clock_mode);
+			return ret;
 		}
 
 		ret = set_rpc_clock_mode(rpc_clock_mode);
@@ -433,7 +443,6 @@ static uint32_t hyper_flash_read_device_id(uint32_t *read_device_id)
 	/* 1st command write */
 	ret = hyper_flash_set_command(HYPER_FL_UNLOCK1_ADD,
 							HYPER_FL_UNLOCK1_DATA);
-
 	if (ret == FL_DRV_OK) {
 		/* 2nd command write */
 		ret = hyper_flash_set_command(HYPER_FL_UNLOCK2_ADD,
@@ -453,7 +462,7 @@ static uint32_t hyper_flash_read_device_id(uint32_t *read_device_id)
 						read_data,
 						FLASH_DATA_READ_BYTE_COUNT_8);
 
-		if (set_addr == 0U) {
+		if (ret == FL_DRV_OK && set_addr == 0U) {
 			*read_device_id =
 			(((read_data[0]&0xFF000000U)>>FLASH_DATA_BIT_SHIFT_8) |
 			((read_data[0]&0x00FF0000U)<<FLASH_DATA_BIT_SHIFT_8) |
