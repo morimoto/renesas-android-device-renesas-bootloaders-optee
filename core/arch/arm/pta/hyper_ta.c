@@ -88,9 +88,9 @@ static TEE_Result init_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 	}
 
 	p[0].value.a = qspi_hyper_flash_init();
-	if (p[0].value.a == FL_DRV_OK) {
+	if (p[0].value.a == FL_DRV_OK)
 		return TEE_SUCCESS;
-	} else
+	else
 		return TEE_ERROR_GENERIC;
 }
 
@@ -122,9 +122,9 @@ static TEE_Result read_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 
 	ret = qspi_hyper_flash_read(p[0].value.a,
 		    p[3].memref.buffer, p[0].value.b);
-	if (ret == FL_DRV_OK) {
+	if (ret == FL_DRV_OK)
 		return TEE_SUCCESS;
-	} else
+	else
 		return TEE_ERROR_GENERIC;
 }
 
@@ -174,9 +174,8 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 	}
 
 	ret = qspi_hyper_flash_init();
-	if (ret != FL_DRV_OK) {
+	if (ret != FL_DRV_OK)
 		return TEE_ERROR_GENERIC;
-	}
 
 	ret = qspi_hyper_flash_erase(addr);
 	if (ret == FL_DRV_OK)
@@ -189,10 +188,10 @@ static TEE_Result write_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 
 #ifdef IMAGE_VERIFY_ON
 	/*Verification is done by checking CRC.
-	* Apart from that, image read from HyperFlash
-	* is written back to the shared buffer and
-	* can be additionally checked by CA.
-	*/
+	 * Apart from that, image read from HyperFlash
+	 * is written back to the shared buffer and
+	 * can be additionally checked by CA.
+	 */
 	buf = p[3].memref.buffer;
 	len = p[0].value.b;
 	addr = p[0].value.a;
@@ -242,9 +241,8 @@ static TEE_Result erase_hyper_drv(uint32_t type, TEE_Param p[TEE_NUM_PARAMS])
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
-	if (len % SECTOR_SIZE) {
+	if (len % SECTOR_SIZE)
 		sectors++;
-	}
 
 	ret = qspi_hyper_flash_init();
 	if (ret != FL_DRV_OK)

@@ -207,11 +207,10 @@ static int TA_check_object_identifier(const struct import_data_t *imp_data,
 		EMSG("Object identifier of imported key is empty");
 		return KM_ERROR_UNSUPPORTED_KEY_ENCRYPTION_ALGORITHM;
 	}
-	if (algorithm == ALGORITHM_RSA) {
+	if (algorithm == ALGORITHM_RSA)
 		exp_ident = identifier_rsa;
-	} else {
+	else
 		exp_ident = identifier_ec;
-	}
 
 	cmp_res = memcmp(exp_ident, imp_data->obj_ident1,
 				imp_data->obj1_length * sizeof(uint64_t));
@@ -281,7 +280,8 @@ static int TA_push_to_output(uint8_t *output,
 	return offset;
 }
 
-static int getBuffer(const uint32_t size, uint8_t **buffer) {
+static int getBuffer(const uint32_t size, uint8_t **buffer)
+{
 	if (!(*buffer)) {
 		*buffer = malloc(size);
 		if (!(*buffer)) {
@@ -378,10 +378,8 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 	}
 out:
 	*output_size = offset;
-	if (point.data)
-		free(point.data);
-	if (buf)
-		free(buf);
+	free(point.data);
+	free(buf);
 	return res;
 }
 
@@ -537,14 +535,15 @@ static TEE_Result TA_deserialize_rsa_keypair(const uint8_t *in,
 	}
 
 out:
-	if (tmp_key_attr_buf)
-		free(tmp_key_attr_buf);
+	free(tmp_key_attr_buf);
 
 	return res;
 }
 
 static void free_rsa_keypair(struct rsa_keypair *keyPair)
 {
+	if (!keyPair)
+		return;
 	//Free keyPair
 	if (keyPair->d) {
 		crypto_bignum_clear(keyPair->d);
@@ -664,9 +663,7 @@ static TEE_Result TA_deserialize_ec_keypair(const uint8_t *in,
 	}
 
 out:
-	if (tmp_key_attr_buf) {
-		free(tmp_key_attr_buf);
-	}
+	free(tmp_key_attr_buf);
 	return res;
 }
 
@@ -884,8 +881,7 @@ static TEE_Result TA_asn1_decode(uint32_t ptypes,
 				output, output_size, key_size);
 out:
 	der_sequence_free(list_root);
-	if (imp_data.octet_str_data)
-		free(imp_data.octet_str_data);
+	free(imp_data.octet_str_data);
 	return res;
 }
 
@@ -974,14 +970,14 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 	uint32_t key_size_bytes = (key_size + 7) / 8;
 
 	if (type == TEE_TYPE_RSA_KEYPAIR) {
-		num_attr1 = malloc(sizeof(struct bignum) +
+		num_attr1 = malloc(sizeof(*num_attr1) +
 					BYTES_PER_WORD + attr1_l);
 		if (!num_attr1) {
 			EMSG("Failed to allocate memory for number of attr 1");
 			res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 			goto out;
 		}
-		num_attr1->alloc = sizeof(struct bignum) +
+		num_attr1->alloc = sizeof(*num_attr1) +
 						BYTES_PER_WORD + attr1_l;
 		res = crypto_bignum_bin2bn(attr1, attr1_l, num_attr1);
 		if (res != CRYPT_OK) {
@@ -1046,10 +1042,8 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 		goto out;
 	}
 out:
-	if (num_attr1)
-		free(num_attr1);
-	if (out_buf)
-		free(out_buf);
+	free(num_attr1);
+	free(out_buf);
 	return res;
 }
 
@@ -1168,12 +1162,9 @@ static TEE_Result TA_asn1_encode_pubkey(uint32_t ptypes,
 	}
 out:
 	params[3].memref.size = (uint32_t) output_size;
-	if (out_buf)
-		free(out_buf);
-	if (oid_buf)
-		free(oid_buf);
-	if (params_buf)
-		free(params_buf);
+	free(out_buf);
+	free(oid_buf);
+	free(params_buf);
 	return res;
 }
 
@@ -1209,20 +1200,20 @@ static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
 		res = TEE_ERROR_BAD_PARAMETERS;
 		goto out;
 	}
-	s = malloc(sizeof(struct bignum) + BYTES_PER_WORD + s_size);
+	s = malloc(sizeof(*s) + BYTES_PER_WORD + s_size);
 	if (!s) {
 		EMSG("Failed to allocate memory for EC sign number S");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	r = malloc(sizeof(struct bignum) + BYTES_PER_WORD + r_size);
+	r = malloc(sizeof(*r) + BYTES_PER_WORD + r_size);
 	if (!r) {
 		EMSG("Failed to allocate memory for EC sign number R");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	s->alloc = sizeof(struct bignum) + BYTES_PER_WORD + s_size;
-	r->alloc = sizeof(struct bignum) + BYTES_PER_WORD + r_size;
+	s->alloc = sizeof(*s) + BYTES_PER_WORD + s_size;
+	r->alloc = sizeof(*r) + BYTES_PER_WORD + r_size;
 	res = crypto_bignum_bin2bn(params[0].memref.buffer, r_size, r);
 	if (res != CRYPT_OK) {
 		EMSG("Failed to convert r to big number");
@@ -1252,12 +1243,9 @@ static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
 	memcpy(params[2].memref.buffer, out_buf, out_buf_l);
 out:
 	params[2].memref.size = out_buf_l;
-	if (r)
-		free(r);
-	if (s)
-		free(s);
-	if (out_buf)
-		free(out_buf);
+	free(r);
+	free(s);
+	free(out_buf);
 	return res;
 }
 
@@ -1295,20 +1283,20 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 		goto out;
 	}
 
-	s = malloc(sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2);
+	s = malloc(sizeof(*s) + BYTES_PER_WORD + input_l / 2);
 	if (!s) {
 		EMSG("Failed to allocate memory for EC sign number S");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	r = malloc(sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2);
+	r = malloc(sizeof(*r) + BYTES_PER_WORD + input_l / 2);
 	if (!r) {
 		EMSG("Failed to allocate memory for EC sign number R");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	s->alloc = sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2;
-	r->alloc = sizeof(struct bignum) + BYTES_PER_WORD + input_l / 2;
+	s->alloc = sizeof(*s) + BYTES_PER_WORD + input_l / 2;
+	r->alloc = sizeof(*r) + BYTES_PER_WORD + input_l / 2;
 	res = der_decode_sequence_multi(input, input_l,
 				LTC_ASN1_INTEGER, 1UL, r,
 				LTC_ASN1_INTEGER, 1UL, s,
@@ -1328,10 +1316,8 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 	output_l += bn_size;
 out:
 	params[2].memref.size = output_l;
-	if (s)
-		free(s);
-	if (r)
-		free(r);
+	free(s);
+	free(r);
 	return res;
 }
 
@@ -1498,20 +1484,12 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 	params[1].memref.size = output_certificate_size;
 
 out:
-	if (pk) {
-		free(pk);
-	}
-	if (keyPair) {
-		free_rsa_keypair(keyPair);
-		free(keyPair);
-	}
-	if (hashCtx) {
-		free(hashCtx);
-	}
-	if (tbsCertificate)
-		free(tbsCertificate);
-	if (signature)
-		free(signature);
+	free(pk);
+	free_rsa_keypair(keyPair);
+	free(keyPair);
+	free(hashCtx);
+	free(tbsCertificate);
+	free(signature);
 
 	return res;
 }
@@ -1677,18 +1655,11 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 	params[1].memref.size = output_certificate_size;
 
 out:
-	if (pk) {
-		free(pk);
-	}
+	free(pk);
 	free_ecc_keypair(&keyPair);
-	if (hashCtx) {
-		free(hashCtx);
-	}
-	if (tbsCertificate)
-		free(tbsCertificate);
-	if (signature)
-		free(signature);
-
+	free(hashCtx);
+	free(tbsCertificate);
+	free(signature);
 
 	return res;
 }
@@ -1803,7 +1774,7 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	}
 
 	verified_boot_state = key_charact[sizeof(uint32_t) * 2 +
-	                                  key_charact_size + att_params_size];
+					key_charact_size + att_params_size];
 
 	//Root RSA attestation key
 	res = TA_deserialize_rsa_keypair(root_key_attr, root_key_attr_size,
@@ -1907,30 +1878,16 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 	//Copy ASN.1 DERencoded certificate length
 	params[3].memref.size = output_certificate_size;
 out:
-	if (pk)
-		free(pk);
-
-	if (attestExt)
-		free(attestExt);
-	if (keyPair) {
-		free_rsa_keypair(keyPair);
-		free(keyPair);
-	}
-	if (hashCtx)
-		free(hashCtx);
-
-	if (characteristics.sw_enforced.params)
-		free(characteristics.sw_enforced.params);
-
-	if (characteristics.hw_enforced.params)
-		free(characteristics.hw_enforced.params);
-
-	if (attest_params.params)
-		free(attest_params.params);
-	if (tbsCertificate)
-		free(tbsCertificate);
-	if (signature)
-		free(signature);
+	free(pk);
+	free(attestExt);
+	free_rsa_keypair(keyPair);
+	free(keyPair);
+	free(hashCtx);
+	free(characteristics.sw_enforced.params);
+	free(characteristics.hw_enforced.params);
+	free(attest_params.params);
+	free(tbsCertificate);
+	free(signature);
 
 	return res;
 }
@@ -2041,7 +1998,7 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	}
 
 	verified_boot_state = key_charact[sizeof(uint32_t) * 2 +
-	                                  key_charact_size + att_params_size];
+					key_charact_size + att_params_size];
 
 	//Root EC attestation key
 	res = TA_deserialize_ec_keypair(root_key_attr, root_key_attr_size,
@@ -2149,28 +2106,15 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 	params[3].memref.size = output_certificate_size;
 
 out:
-	if (pk)
-		free(pk);
-
-	if (attestExt)
-		free(attestExt);
-
+	free(pk);
+	free(attestExt);
 	free_ecc_keypair(&keyPair);
-	if (hashCtx)
-		free(hashCtx);
-
-	if (characteristics.sw_enforced.params)
-		free(characteristics.sw_enforced.params);
-
-	if (characteristics.hw_enforced.params)
-		free(characteristics.hw_enforced.params);
-
-	if (attest_params.params)
-		free(attest_params.params);
-	if (tbsCertificate)
-		free(tbsCertificate);
-	if (signature)
-		free(signature);
+	free(hashCtx);
+	free(characteristics.sw_enforced.params);
+	free(characteristics.hw_enforced.params);
+	free(attest_params.params);
+	free(tbsCertificate);
+	free(signature);
 
 	return res;
 }
