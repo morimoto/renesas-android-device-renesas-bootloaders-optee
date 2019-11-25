@@ -36,7 +36,7 @@ RMDIR                := "/bin/rmdir --ignore-fail-on-non-empty"
 MKDIR                := /bin/mkdir
 
 #.PHONY: $(OPTEE_BINARY)
-$(OPTEE_BINARY):
+$(OPTEE_BINARY): $(shell find -L $(OPTEE_SRC) -path $(OPTEE_SRC)/.git -prune -o -print)
 	@echo "Building OPTEE-ANDROID"
 	$(MKDIR) -p $(OPTEE_OUT_DIR)
 	$(hide) ARCH=arm $(ANDROID_MAKE) -e $(OPTEE_BUILD_FLAGS) -C $(OPTEE_SRC) O=$(OPTEE_OUT_DIR) CROSS_COMPILE64=$(BSP_GCC_CROSS_COMPILE) RMDIR=$(RMDIR) clean
