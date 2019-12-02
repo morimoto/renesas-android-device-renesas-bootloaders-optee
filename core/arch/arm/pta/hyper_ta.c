@@ -71,7 +71,7 @@ static const struct img_param img_params[MAX_IMAGES] = {
 			{"Cert_header", 0x180000, 1*SECTOR_SIZE},
 			{"BL31", 0x1C0000, 1*SECTOR_SIZE},
 			{"OPTEE-OS", 0x200000, 2*SECTOR_SIZE},
-			{"U-boot", 0x640000, 4*SECTOR_SIZE},
+			{"U-boot", 0x640000, 5*SECTOR_SIZE},
 			{"Secure_store", STANDALONE_FS_SECTOR_ADDR,
 				STANDALONE_FS_SECTOR_NUM*SECTOR_SIZE} };
 
