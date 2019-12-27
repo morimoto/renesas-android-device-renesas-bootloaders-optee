@@ -10,6 +10,7 @@ srcs-y += hyper_ta.c
 srcs-y += asn1_parser.c
 srcs-y += attestations.c
 srcs-y += encoders.c
+srcs-y += oem_lock_ability.c
 
 subdirs-y +=../../../../lib/libzlib
 
