@@ -20,7 +20,7 @@ ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
 OPTEE_SRC            := $(abspath ./device/renesas/bootloaders/optee)
 OPTEE_OBJ            := $(PRODUCT_OUT)/obj/OPTEE_OBJ
-OPTEE_BINARY         := $(OPTEE_OBJ)/core/tee.bin
+OPTEE_BINARY         := $(OPTEE_OBJ)/core/tee-raw.bin
 OPTEE_BINARY_SB      := $(OPTEE_OBJ)/core/sb-tee.bin
 OPTEE_SREC           := $(OPTEE_OBJ)/core/tee.srec
 OPTEE_OUT_DIR        := $(abspath $(OPTEE_OBJ))
