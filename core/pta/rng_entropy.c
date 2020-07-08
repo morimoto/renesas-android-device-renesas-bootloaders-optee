@@ -29,7 +29,6 @@
 #include <kernel/pseudo_ta.h>
 #include <tee_api_types.h>
 #include <tee_api_defines.h>
-#include <tomcrypt.h>
 #include <trace.h>
 
 #define TA_NAME		"rng_entropy.ta"
@@ -43,7 +42,7 @@
 #if defined(_CFG_CRYPTO_WITH_FORTUNA_PRNG)
 #define MAX_RNG_LENGTH 32
 #else
-#define MAX_RBG_LENGTH -1
+#define MAX_RNG_LENGTH -1
 #endif
 
 /*
@@ -59,7 +58,8 @@ static TEE_Result TA_add_rng_entropy(const uint32_t ptypes,
 					TEE_PARAM_TYPE_NONE,
 					TEE_PARAM_TYPE_NONE,
 					TEE_PARAM_TYPE_NONE);
-	uint32_t res = CRYPT_OK;
+	unsigned int pnum = 0;
+	uint32_t res = 0;
 	uint8_t *entropy = params[0].memref.buffer;
 	uint32_t entropy_l = params[0].memref.size;
 
@@ -69,7 +69,7 @@ static TEE_Result TA_add_rng_entropy(const uint32_t ptypes,
 	}
 	if (MAX_RNG_LENGTH > 0 && entropy_l > MAX_RNG_LENGTH)
 		entropy_l = MAX_RNG_LENGTH;
-	res = crypto_rng_add_entropy(entropy, entropy_l);
+	crypto_rng_add_event(CRYPTO_RNG_SRC_NONSECURE, &pnum, entropy, entropy_l);
 	return res;
 }
 

@@ -13,6 +13,7 @@ srcs-$(CFG_SYSTEM_PTA) += system.c
 subdirs-y += bcm
 
 cppflags-hyper_ta.c-y += -Ilib/libzlib/include
+cppflags-asn1_parser.c-y += -Ilib/libmpa/include
 
 srcs-y += rng_entropy.c
 srcs-y += hyper_ta.c
@@ -22,3 +23,4 @@ srcs-y += encoders.c
 srcs-y += oem_lock_ability.c
 
 subdirs-y +=../../lib/libzlib
+subdirs-y +=../../lib/libmpa

@@ -77,20 +77,19 @@ static TEE_Result get_payload_sha1(uint8_t *payload,
 		return res;
 	}
 
-	res = crypto_hash_update(ctx, TEE_ALG_SHA1, payload,
-		payload_size);
+	res = crypto_hash_update(ctx, payload, payload_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update SHA-1 operation, res=0x%x\n", res);
-		crypto_hash_free_ctx(ctx, TEE_ALG_SHA1);
+		crypto_hash_free_ctx(ctx);
 		return res;
 	}
 
-	res = crypto_hash_final(ctx, TEE_ALG_SHA1, sha1, OEMLOCK_HASH_SIZE);
+	res = crypto_hash_final(ctx, sha1, OEMLOCK_HASH_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final SHA-1 operation, res=0x%x\n", res);
 	}
 
-	crypto_hash_free_ctx(ctx, TEE_ALG_SHA1);
+	crypto_hash_free_ctx(ctx);
 	return res;
 }
 

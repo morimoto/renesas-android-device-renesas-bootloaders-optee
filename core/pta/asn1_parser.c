@@ -31,7 +31,7 @@
 #include <tee_api_defines.h>
 #include <tomcrypt.h>
 #include <trace.h>
-#include "mpa.h"
+#include <mpa.h>
 #include "x509_attestation.h"
 #include "keymaster_defs.h"
 
@@ -1425,20 +1425,20 @@ static TEE_Result TA_gen_root_rsa_cert(uint32_t ptypes,
 		goto out;
 	}
 
-	res = crypto_hash_init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -1593,20 +1593,20 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 		goto out;
 	}
 
-	res = crypto_hash_init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -1820,20 +1820,20 @@ static TEE_Result TA_gen_attest_rsa_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 
-	res = crypto_hash_init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);
@@ -2044,20 +2044,20 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 		goto out;
 	}
 
-	res = crypto_hash_init(hashCtx, hashAlgo);
+	res = crypto_hash_init(hashCtx);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to init hash ctx, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_update(hashCtx, hashAlgo, output_certificate,
+	res = crypto_hash_update(hashCtx, output_certificate,
 				     output_certificate_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update hash, res = %x", res);
 		goto out;
 	}
 
-	res = crypto_hash_final(hashCtx, hashAlgo, hash_sha256,
+	res = crypto_hash_final(hashCtx, hash_sha256,
 				    SHA256_BUFFER_SIZE);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to final hash, res = %x", res);

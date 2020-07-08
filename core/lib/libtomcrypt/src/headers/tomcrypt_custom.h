@@ -72,6 +72,10 @@
 #define LTC_NO_PROTOTYPES
 #endif
 
+#ifndef LTC_NO_PROTOTYPES
+#define LTC_NO_PROTOTYPES
+#endif
+
 /* shortcut to disable automatic inclusion */
 #if defined LTC_NOTHING && !defined LTC_EASY
   #define LTC_NO_CIPHERS
