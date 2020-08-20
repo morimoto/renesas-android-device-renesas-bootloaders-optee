@@ -77,6 +77,13 @@ static TEE_Result get_payload_sha1(uint8_t *payload,
 		return res;
 	}
 
+	res = crypto_hash_init(ctx);
+	if (res != TEE_SUCCESS) {
+		EMSG("Failed to init hash context, res = %x\n", res);
+		crypto_hash_free_ctx(ctx);
+		return res;
+	}
+
 	res = crypto_hash_update(ctx, payload, payload_size);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to update SHA-1 operation, res=0x%x\n", res);
