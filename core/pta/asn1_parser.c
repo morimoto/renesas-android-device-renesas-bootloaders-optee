@@ -31,9 +31,12 @@
 #include <tee_api_defines.h>
 #include <tomcrypt.h>
 #include <trace.h>
-#include <mpa.h>
 #include "x509_attestation.h"
 #include "keymaster_defs.h"
+
+#ifndef CFG_CORE_MBEDTLS_MPI
+#include <mpa.h>
+#endif
 
 #include <tee/tee_cryp_utl.h>
 
@@ -104,12 +107,6 @@ struct import_data_t {
 struct blob {
 	uint8_t *data;
 	size_t data_length;
-};
-
-struct bignum {
-	uint32_t alloc;
-	int32_t size;
-	uint32_t d[];
 };
 
 uint64_t const identifier_rsa[] = {1, 2, 840, 113549, 1, 1, 1};
@@ -280,18 +277,6 @@ static int TA_push_to_output(uint8_t *output,
 	return offset;
 }
 
-static int getBuffer(const uint32_t size, uint8_t **buffer)
-{
-	if (!(*buffer)) {
-		*buffer = malloc(size);
-		if (!(*buffer)) {
-			EMSG("Failed to allocate memory for BN buffer");
-			return KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		}
-	}
-	return CRYPT_OK;
-}
-
 static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 				const uint32_t level,
 				uint32_t *attrs_count,
@@ -301,7 +286,7 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 				uint32_t *key_size)
 {
 	int res = CRYPT_OK;
-	struct bignum *nummpa = NULL;
+	void *bignum = NULL;
 	struct blob point = {
 			.data = NULL,
 			.data_length = 0};
@@ -321,20 +306,24 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 				goto out;
 			break;
 		case LTC_ASN1_INTEGER:
-			nummpa = list->data;
-			if (nummpa->size == 0 || algorithm != ALGORITHM_RSA
+			bignum = list->data;
+			if (algorithm != ALGORITHM_RSA
 				|| *attrs_count > ATTR_COUNT_RSA)
 				break;
-			attr_size = crypto_bignum_num_bytes(nummpa);
-			res = getBuffer(attr_size, &buf);
-			if (res != CRYPT_OK)
+			attr_size = crypto_bignum_num_bytes(bignum);
+			buf = malloc(attr_size);
+			if (!buf) {
+				EMSG("Failed to allocate memory for BN buffer");
+				res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 				goto out;
-			crypto_bignum_bn2bin(nummpa, buf);
+			}
+			crypto_bignum_bn2bin(bignum, buf);
 			offset += TA_push_to_output(output + offset,
 					buf, attr_size);
 			if (*attrs_count == 0)
 				*key_size = attr_size * 8;
 			(*attrs_count)++;
+			free(buf);
 			break;
 		case LTC_ASN1_OCTET_STRING:
 			if (algorithm != ALGORITHM_EC ||
@@ -379,7 +368,6 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 out:
 	*output_size = offset;
 	free(point.data);
-	free(buf);
 	return res;
 }
 
@@ -871,6 +859,7 @@ static TEE_Result TA_asn1_decode(uint32_t ptypes,
 	der_sequence_free(list_root);
 	res = der_decode_sequence_flexi(imp_data.octet_str_data,
 				&imp_data.octet_str_length, &list_root);
+
 	if (res != CRYPT_OK) {
 		EMSG("Failed to decode attributes with code %lx", res);
 		res = KM_ERROR_UNSUPPORTED_KEY_ENCRYPTION_ALGORITHM;
@@ -961,7 +950,7 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 			const uint32_t attr2_l, const uint32_t key_size)
 {
 	int res = CRYPT_OK;
-	struct bignum *num_attr1 = NULL;
+	void *num_attr1 = NULL;
 	uint8_t *out_buf = NULL;
 	uint64_t out_buf_l = 0;
 	uint32_t offset = 0;
@@ -970,15 +959,12 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 	uint32_t key_size_bytes = (key_size + 7) / 8;
 
 	if (type == TEE_TYPE_RSA_KEYPAIR) {
-		num_attr1 = malloc(sizeof(*num_attr1) +
-					BYTES_PER_WORD + attr1_l);
+		num_attr1 = crypto_bignum_allocate(attr1_l);
 		if (!num_attr1) {
 			EMSG("Failed to allocate memory for number of attr 1");
 			res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 			goto out;
 		}
-		num_attr1->alloc = sizeof(*num_attr1) +
-						BYTES_PER_WORD + attr1_l;
 		res = crypto_bignum_bin2bn(attr1, attr1_l, num_attr1);
 		if (res != CRYPT_OK) {
 			EMSG("Failed to convert bin to BN");
@@ -1042,7 +1028,7 @@ static int encode_params(uint8_t **params_buf, uint64_t *params_buf_l,
 		goto out;
 	}
 out:
-	free(num_attr1);
+	crypto_bignum_free(num_attr1);
 	free(out_buf);
 	return res;
 }
@@ -1192,28 +1178,27 @@ static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
 	uint32_t s_size = params[1].memref.size;
 	uint64_t out_buf_l = 0;
 	uint8_t *out_buf = NULL;
-	struct bignum *s = NULL;
-	struct bignum *r = NULL;
+	void *s = NULL;
+	void *r = NULL;
 
 	if (ptypes != exp_param_types) {
 		EMSG("Wrong parameters\n");
 		res = TEE_ERROR_BAD_PARAMETERS;
 		goto out;
 	}
-	s = malloc(sizeof(*s) + BYTES_PER_WORD + s_size);
+	s = crypto_bignum_allocate(s_size);
 	if (!s) {
 		EMSG("Failed to allocate memory for EC sign number S");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	r = malloc(sizeof(*r) + BYTES_PER_WORD + r_size);
+	r = crypto_bignum_allocate(r_size);
 	if (!r) {
 		EMSG("Failed to allocate memory for EC sign number R");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	s->alloc = sizeof(*s) + BYTES_PER_WORD + s_size;
-	r->alloc = sizeof(*r) + BYTES_PER_WORD + r_size;
+
 	res = crypto_bignum_bin2bn(params[0].memref.buffer, r_size, r);
 	if (res != CRYPT_OK) {
 		EMSG("Failed to convert r to big number");
@@ -1243,8 +1228,8 @@ static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
 	memcpy(params[2].memref.buffer, out_buf, out_buf_l);
 out:
 	params[2].memref.size = out_buf_l;
-	free(r);
-	free(s);
+	crypto_bignum_free(r);
+	crypto_bignum_free(s);
 	free(out_buf);
 	return res;
 }
@@ -1274,8 +1259,8 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 	uint32_t output_l = 0;
 	uint32_t key_size = (params[1].value.a + 7) / 8;
 	uint32_t bn_size = 0;
-	struct bignum *s = NULL;
-	struct bignum *r = NULL;
+	void *s = NULL;
+	void *r = NULL;
 
 	if (ptypes != exp_param_types) {
 		EMSG("Wrong parameters\n");
@@ -1283,20 +1268,18 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 		goto out;
 	}
 
-	s = malloc(sizeof(*s) + BYTES_PER_WORD + input_l / 2);
+	s = crypto_bignum_allocate(input_l);
 	if (!s) {
 		EMSG("Failed to allocate memory for EC sign number S");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	r = malloc(sizeof(*r) + BYTES_PER_WORD + input_l / 2);
+	r = crypto_bignum_allocate(input_l);
 	if (!r) {
 		EMSG("Failed to allocate memory for EC sign number R");
 		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto out;
 	}
-	s->alloc = sizeof(*s) + BYTES_PER_WORD + input_l / 2;
-	r->alloc = sizeof(*r) + BYTES_PER_WORD + input_l / 2;
 	res = der_decode_sequence_multi(input, input_l,
 				LTC_ASN1_INTEGER, 1UL, r,
 				LTC_ASN1_INTEGER, 1UL, s,
@@ -1316,8 +1299,8 @@ static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
 	output_l += bn_size;
 out:
 	params[2].memref.size = output_l;
-	free(s);
-	free(r);
+	crypto_bignum_free(s);
+	crypto_bignum_free(r);
 	return res;
 }
 

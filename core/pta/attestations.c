@@ -16,7 +16,11 @@
 
 /* File contains functions, which provide X.509 support for attestation. */
 #include "x509_attestation.h"
+#ifndef CFG_CORE_MBEDTLS_MPI
 #include <mpa.h>
+#else
+#define BITS_TO_BYTES(x) (((x)+7) >> 3)
+#endif
 
 const unsigned long unitName_oid[] = { 2, 5, 4, 11 };
 const unsigned long organizationName_oid[] = { 2, 5, 4, 10 };
