@@ -297,6 +297,7 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 
 	while (list != NULL) {
 		switch (list->type) {
+		case LTC_ASN1_CUSTOM_TYPE:
 		case LTC_ASN1_CONSTRUCTED:
 		case LTC_ASN1_SEQUENCE:
 			res = TA_iterate_asn1_attrs(list->child,
