@@ -311,6 +311,8 @@ static int TA_iterate_asn1_attrs(const ltc_asn1_list *list,
 				|| *attrs_count > ATTR_COUNT_RSA)
 				break;
 			attr_size = crypto_bignum_num_bytes(bignum);
+			if (!attr_size)
+				break;
 			buf = malloc(attr_size);
 			if (!buf) {
 				EMSG("Failed to allocate memory for BN buffer");
