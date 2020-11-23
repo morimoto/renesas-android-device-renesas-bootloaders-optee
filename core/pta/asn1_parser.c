@@ -62,8 +62,6 @@
 
 #define CMD_ASN1_DECODE 0
 #define CMD_ASN1_ENCODE_PUBKEY 1
-#define CMD_EC_SIGN_ENCODE 2
-#define CMD_EC_SIGN_DECODE 3
 #define CMD_ASN1_GEN_ROOT_RSA_CERT 4
 #define CMD_ASN1_GEN_ROOT_EC_CERT 5
 #define CMD_ASN1_GEN_ATT_RSA_CERT 6
@@ -1159,156 +1157,6 @@ out:
 
 /*
  * INPUT
- * params[0].memref.buffer - r-part of EC sign
- * params[0].memref.size - length of r-part
- * params[1].memref.buffer - s-part of EC sign
- * params[1].memref.size - length of s-part
- *
- * OUTPUT
- * params[2].memref.buffer - encoded sign data
- * params[2].memref.size - encoded sign data length
- */
-static TEE_Result TA_ec_sign_encode(uint32_t ptypes,
-				    TEE_Param params[TEE_NUM_PARAMS])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(
-					TEE_PARAM_TYPE_MEMREF_INPUT,
-					TEE_PARAM_TYPE_MEMREF_INPUT,
-					TEE_PARAM_TYPE_MEMREF_OUTPUT,
-					TEE_PARAM_TYPE_NONE);
-	uint32_t res = CRYPT_OK;
-	uint32_t r_size = params[0].memref.size;
-	uint32_t s_size = params[1].memref.size;
-	uint64_t out_buf_l = 0;
-	uint8_t *out_buf = NULL;
-	void *s = NULL;
-	void *r = NULL;
-
-	if (ptypes != exp_param_types) {
-		EMSG("Wrong parameters\n");
-		res = TEE_ERROR_BAD_PARAMETERS;
-		goto out;
-	}
-	s = crypto_bignum_allocate(s_size);
-	if (!s) {
-		EMSG("Failed to allocate memory for EC sign number S");
-		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		goto out;
-	}
-	r = crypto_bignum_allocate(r_size);
-	if (!r) {
-		EMSG("Failed to allocate memory for EC sign number R");
-		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		goto out;
-	}
-
-	res = crypto_bignum_bin2bn(params[0].memref.buffer, r_size, r);
-	if (res != CRYPT_OK) {
-		EMSG("Failed to convert r to big number");
-		goto out;
-	}
-
-	res = crypto_bignum_bin2bn(params[1].memref.buffer, s_size, s);
-	if (res != CRYPT_OK) {
-		EMSG("Failed to convert s to big number");
-		goto out;
-	}
-	out_buf_l = r_size + s_size + 3 * MAX_HEADER_SIZE;
-	out_buf = malloc(out_buf_l);
-	if (!out_buf) {
-		EMSG("Failed to allocate memory for EC sign buffer");
-		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		goto out;
-	}
-	res = der_encode_sequence_multi(out_buf, &out_buf_l,
-				LTC_ASN1_INTEGER, 1UL, r,
-				LTC_ASN1_INTEGER, 1UL, s,
-				LTC_ASN1_EOL, 0UL, NULL);
-	if (res != CRYPT_OK) {
-		EMSG("Failed to encode EC sign res = %x", res);
-		goto out;
-	}
-	memcpy(params[2].memref.buffer, out_buf, out_buf_l);
-out:
-	params[2].memref.size = out_buf_l;
-	crypto_bignum_free(r);
-	crypto_bignum_free(s);
-	free(out_buf);
-	return res;
-}
-
-/*
- * INPUT
- * params[0].memref.buffer - EC sign in ASN.1 format
- * params[0].memref.size - EC sign length
- * params[1].value.a - key size in bits
- *
- * OUTPUT
- * params[2].memref.buffer - decoded sign data
- * params[2].memref.size - decoded sign data length
- */
-static TEE_Result TA_ec_sign_decode(uint32_t ptypes,
-				    TEE_Param params[TEE_NUM_PARAMS])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(
-					TEE_PARAM_TYPE_MEMREF_INPUT,
-					TEE_PARAM_TYPE_VALUE_INPUT,
-					TEE_PARAM_TYPE_MEMREF_OUTPUT,
-					TEE_PARAM_TYPE_NONE);
-	uint32_t res = CRYPT_OK;
-	uint8_t *input = params[0].memref.buffer;
-	uint32_t input_l = params[0].memref.size;
-	uint8_t *output = params[2].memref.buffer;
-	uint32_t output_l = 0;
-	uint32_t key_size = (params[1].value.a + 7) / 8;
-	uint32_t bn_size = 0;
-	void *s = NULL;
-	void *r = NULL;
-
-	if (ptypes != exp_param_types) {
-		EMSG("Wrong parameters\n");
-		res = TEE_ERROR_BAD_PARAMETERS;
-		goto out;
-	}
-
-	s = crypto_bignum_allocate(input_l);
-	if (!s) {
-		EMSG("Failed to allocate memory for EC sign number S");
-		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		goto out;
-	}
-	r = crypto_bignum_allocate(input_l);
-	if (!r) {
-		EMSG("Failed to allocate memory for EC sign number R");
-		res = KM_ERROR_MEMORY_ALLOCATION_FAILED;
-		goto out;
-	}
-	res = der_decode_sequence_multi(input, input_l,
-				LTC_ASN1_INTEGER, 1UL, r,
-				LTC_ASN1_INTEGER, 1UL, s,
-				LTC_ASN1_EOL, 0UL, NULL);
-	if (res != CRYPT_OK) {
-		EMSG("Failed to decode sequence of EC signature");
-		goto out;
-	}
-	bn_size = crypto_bignum_num_bytes(r);
-	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
-	crypto_bignum_bn2bin(r, output + output_l);
-	output_l += bn_size;
-
-	bn_size = crypto_bignum_num_bytes(s);
-	output_l += key_size > bn_size ? (key_size - bn_size) : 0;
-	crypto_bignum_bn2bin(s, output + output_l);
-	output_l += bn_size;
-out:
-	params[2].memref.size = output_l;
-	crypto_bignum_free(s);
-	crypto_bignum_free(r);
-	return res;
-}
-
-/*
- * INPUT
  * params[0].memref.buffer - key-pair in format: size | buffer, ...
  * params[0].memref.size - key-pair buffer length
  *
@@ -2115,10 +1963,6 @@ static TEE_Result invoke_command(void *psess __unused,
 		return TA_asn1_decode(ptypes, params);
 	case CMD_ASN1_ENCODE_PUBKEY:
 		return TA_asn1_encode_pubkey(ptypes, params);
-	case CMD_EC_SIGN_ENCODE:
-		return TA_ec_sign_encode(ptypes, params);
-	case CMD_EC_SIGN_DECODE:
-		return TA_ec_sign_decode(ptypes, params);
 	//Attestation commands
 	case CMD_ASN1_GEN_ROOT_RSA_CERT:
 		return TA_gen_root_rsa_cert(ptypes, params);
