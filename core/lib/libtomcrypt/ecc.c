@@ -315,7 +315,7 @@ TEE_Result crypto_acipher_ecc_sign(uint32_t algo, struct ecc_keypair *key,
 	}
 
 	ltc_sig_len = *sig_len;
-	ltc_res = ecc_sign_hash_rfc7518(msg, msg_len, sig, &ltc_sig_len,
+	ltc_res = ecc_sign_hash(msg, msg_len, sig, &ltc_sig_len,
 				    NULL, find_prng("prng_crypto"), &ltc_key);
 	if (ltc_res == CRYPT_OK) {
 		res = TEE_SUCCESS;
@@ -356,13 +356,7 @@ TEE_Result crypto_acipher_ecc_verify(uint32_t algo, struct ecc_public_key *key,
 	if (res != TEE_SUCCESS)
 		goto out;
 
-	/* check keysize vs sig_len */
-	if ((key_size_bytes * 2) != sig_len) {
-		res = TEE_ERROR_BAD_PARAMETERS;
-		goto out;
-	}
-
-	ltc_res = ecc_verify_hash_rfc7518(sig, sig_len, msg, msg_len, &ltc_stat,
+	ltc_res = ecc_verify_hash(sig, sig_len, msg, msg_len, &ltc_stat,
 					  &ltc_key);
 	res = convert_ltc_verify_status(ltc_res, ltc_stat);
 out:
