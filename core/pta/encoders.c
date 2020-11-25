@@ -890,32 +890,3 @@ exit:
 	free(attestExt);
 	return res;
 }
-
-int encode_ecc_sign_256(uint8_t *sign, ULONG *sign_size)
-{
-	uint32_t res = CRYPT_OK;
-	ULONG key_size = *sign_size / 2;
-	void *r, *s;
-
-	res = createBigNum(&r, (void *)sign, key_size);
-	if (res != CRYPT_OK)
-		goto exit;
-	res = createBigNum(&s, (void *)(sign + key_size), key_size);
-	if (res != CRYPT_OK)
-		goto exit_free_r;
-
-	*sign_size = EC_SIGN_BUFFER_SIZE;
-	res = der_encode_sequence_multi(sign, sign_size,
-				LTC_ASN1_INTEGER, 1UL, r,
-				LTC_ASN1_INTEGER, 1UL, s,
-				LTC_ASN1_EOL, 0UL, NULL);
-	if (res != CRYPT_OK)
-		EMSG("Failed to encode EC sign res = %x", res);
-
-	ltc_mp.deinit(s);
-exit_free_r:
-	ltc_mp.deinit(r);
-exit:
-
-	return res;
-}

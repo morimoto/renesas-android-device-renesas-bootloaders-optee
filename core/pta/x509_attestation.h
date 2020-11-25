@@ -275,8 +275,6 @@ int encodeKeyDescription(der_extValue *extVal, unsigned char **keyDescription,
 			 keymaster_key_characteristics_t *key_chars,
 			 uint8_t vb_state);
 
-int encode_ecc_sign_256(uint8_t *sign, ULONG *sign_size);
-
 /* Functions from attestation.c */
 void rootAlgIdEncode(der_algId *algId, const int rsa);
 void rsaAlgIdEncode(der_algId *algId);

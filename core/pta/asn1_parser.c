@@ -1461,10 +1461,6 @@ static TEE_Result TA_gen_root_ec_cert(uint32_t ptypes,
 		goto out;
 	}
 
-	res = encode_ecc_sign_256(signature, &signature_size);
-	if (res != CRYPT_OK)
-		goto out;
-
 	//Encode certificate
 	LTC_SET_ASN1(Certificate, 0, X509_TBS, tbsCertificate->tbs, TBS_SIZE);
 	LTC_SET_ASN1(Certificate, 1, X509_ALGID, algId, ALG_ID_SIZE);
@@ -1911,10 +1907,6 @@ static TEE_Result TA_gen_attest_ec_cert(uint32_t ptypes  __unused,
 		EMSG("Failed to sign EC certificate, res=%x", res);
 		goto out;
 	}
-
-	res = encode_ecc_sign_256(signature, &signature_size);
-	if (res != CRYPT_OK)
-		goto out;
 
 	//Encode certificate
 	LTC_SET_ASN1(Certificate, 0, X509_TBS, tbsCertificate->tbs, TBS_SIZE);
